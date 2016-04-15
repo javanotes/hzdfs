@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.Configurator;
 import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.handlers.AbstractMessageChannel;
+import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
 import com.reactive.hzdfs.files.FileChunk;
 /**
  * A class to subscribe to {@linkplain FileChunk}.

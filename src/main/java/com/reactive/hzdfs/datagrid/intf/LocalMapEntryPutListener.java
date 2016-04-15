@@ -27,7 +27,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
 import java.io.Serializable;
 

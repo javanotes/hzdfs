@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: MigratedEntryProcessor.java
+* FILE: AbstractLocalPutMapEntryCallback.java
 *
 The MIT License (MIT)
 
@@ -26,23 +26,28 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
 import java.io.Serializable;
 
-import com.hazelcast.map.EntryProcessor;
-/**
- * Partition migration callback on all entries of a given map.
- *
- * @param <V>
- * @see AbstractMigratedEntryProcessor
- */
-public interface MigratedEntryProcessor<V> extends EntryProcessor<Serializable, V>{
+import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
 
+public abstract class AbstractLocalMapEntryPutListener<V>
+    implements LocalMapEntryPutListener<V> {
+
+  protected HazelcastClusterServiceBean hzService;
+  public AbstractLocalMapEntryPutListener(HazelcastClusterServiceBean hzService) {
+    this.hzService = hzService;
+    hzService.addLocalEntryListener(this);
+  }
   /**
-   * Gets the Map for which migrated elements will have a callback
-   * @return
+   * Sets an item to the IMap on which this listener is registered.
+   * @param key
+   * @param value
    */
-  String keyspace();
-  
+  public void putEntry(Serializable key, V value)
+  {
+    hzService.set(key, value, keyspace());
+  }
+
 }

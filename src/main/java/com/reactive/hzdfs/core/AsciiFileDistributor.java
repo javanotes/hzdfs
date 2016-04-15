@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import com.hazelcast.core.EntryEvent;
 import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.handlers.AbstractLocalMapEntryPutListener;
+import com.reactive.hzdfs.datagrid.intf.AbstractLocalMapEntryPutListener;
 import com.reactive.hzdfs.files.FileShareResponse;
 import com.reactive.hzdfs.files.FileSharingAgent;
 /**

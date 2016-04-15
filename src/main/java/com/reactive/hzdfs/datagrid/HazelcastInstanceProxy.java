@@ -67,8 +67,8 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.MapListener;
 import com.reactive.hzdfs.Configurator;
-import com.reactive.hzdfs.datagrid.handlers.AbstractMessageChannel;
-import com.reactive.hzdfs.datagrid.handlers.MessageChannel;
+import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
+import com.reactive.hzdfs.datagrid.intf.MessageChannel;
 import com.reactive.hzdfs.utils.EntityFinder;
 
 /**

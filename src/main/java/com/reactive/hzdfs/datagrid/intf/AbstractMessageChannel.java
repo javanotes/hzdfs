@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: FileChunkSender.java
+* FILE: AbstractMessageChannel.java
 *
 The MIT License (MIT)
 
@@ -26,33 +26,54 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.files.dist;
+package com.reactive.hzdfs.datagrid.intf;
 
-import com.hazelcast.core.Message;
-import com.reactive.hzdfs.Configurator;
+import java.io.Closeable;
+
+import org.springframework.util.Assert;
+
 import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
-import com.reactive.hzdfs.files.FileChunk;
 /**
- * A class to publish {@linkplain FileChunk}.
+ * A base class with utility.
+ *
+ * @param <E>
  */
-public class FileChunkSender extends AbstractMessageChannel<FileChunk> {
+public abstract class AbstractMessageChannel<E> implements MessageChannel<E>, Closeable {
+
+  /**
+   * Get the Hazelcast service bean
+   * @return
+   */
+  protected HazelcastClusterServiceBean hazelcastService;
+  protected String registrationId;
+  public String getRegistrationId() {
+    return registrationId;
+  }
+
   /**
    * 
-   * @param hzService
+   * @param hazelcastService
    */
-  public FileChunkSender(HazelcastClusterServiceBean hzService) {
-    super(hzService, true);
+  public AbstractMessageChannel(HazelcastClusterServiceBean hazelcastService, boolean orderedSubcribe) {
+    Assert.notNull(hazelcastService);
+    this.hazelcastService = hazelcastService;
+    this.hazelcastService.addMessageChannel(this, orderedSubcribe);
   }
+    
   @Override
-  public String topic() {
-    return Configurator.PIPED_TOPIC_FILE;
+  public void sendMessage(E message) {
+    hazelcastService.publish(message, topic());
+
+  }
+  
+  public void setRegistrationId(String regID) {
+    registrationId = regID;
+    
   }
 
   @Override
-  public void onMessage(Message<FileChunk> message) {
-    // ignored
-    
+  public void close() {
+    hazelcastService.removeMessageChannel(this);
   }
-  
+
 }

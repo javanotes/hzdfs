@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: MembershipEventObserver.java
+* FILE: AbstractMembershipEventObserver.java
 *
 The MIT License (MIT)
 
@@ -26,33 +26,39 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
-import java.util.Observer;
+import java.util.Observable;
 
-import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.Member;
-/**
- * Member event callback.
- */
-public interface MembershipEventObserver extends Observer{
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
 
-  /**
-   * 
-   * @param m
-   */
-  public abstract void handleMemberAdded(Member m);
-  /**
-   * 
-   * @param m
-   */
-  public abstract void handleMemberRemoved(Member m);
-  /**
-   * 
-   * @param m
-   * @param op
-   */
-  public abstract void handleMemberModified(Member m, MemberAttributeOperationType op);
-  
+public abstract class AbstractMembershipEventObserver
+    implements MembershipEventObserver {
+
+  @Override
+  public final void update(Observable arg0, Object arg1) {
+    
+    if(arg1 instanceof MembershipEvent)
+    {
+      
+      MembershipEvent me = (MembershipEvent) arg1;
+      switch(me.getEventType())
+      {
+        case MembershipEvent.MEMBER_ADDED:
+          handleMemberAdded(me.getMember());
+          break;
+        case MembershipEvent.MEMBER_REMOVED:
+          handleMemberRemoved(me.getMember());
+          break;
+        case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
+          MemberAttributeEvent ma = (MemberAttributeEvent) arg1;
+          handleMemberModified(ma.getMember(), ma.getOperationType());
+          break;
+          default: break;
+      }
+    }
+    
+  }
 
 }

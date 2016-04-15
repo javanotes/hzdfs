@@ -61,7 +61,7 @@ import com.hazelcast.core.Message;
 import com.reactive.hzdfs.Configurator;
 import com.reactive.hzdfs.OperationsException;
 import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.handlers.MessageChannel;
+import com.reactive.hzdfs.datagrid.intf.MessageChannel;
 import com.reactive.hzdfs.files.FileChunk;
 import com.reactive.hzdfs.files.FileShareResponse;
 import com.reactive.hzdfs.files.FileSharingAgent;

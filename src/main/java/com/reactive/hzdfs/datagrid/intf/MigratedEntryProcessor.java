@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AbstractMessageChannel.java
+* FILE: MigratedEntryProcessor.java
 *
 The MIT License (MIT)
 
@@ -26,54 +26,23 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
-import java.io.Closeable;
+import java.io.Serializable;
 
-import org.springframework.util.Assert;
-
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
+import com.hazelcast.map.EntryProcessor;
 /**
- * A base class with utility.
+ * Partition migration callback on all entries of a given map.
  *
- * @param <E>
+ * @param <V>
+ * @see AbstractMigratedEntryProcessor
  */
-public abstract class AbstractMessageChannel<E> implements MessageChannel<E>, Closeable {
+public interface MigratedEntryProcessor<V> extends EntryProcessor<Serializable, V>{
 
   /**
-   * Get the Hazelcast service bean
+   * Gets the Map for which migrated elements will have a callback
    * @return
    */
-  protected HazelcastClusterServiceBean hazelcastService;
-  protected String registrationId;
-  public String getRegistrationId() {
-    return registrationId;
-  }
-
-  /**
-   * 
-   * @param hazelcastService
-   */
-  public AbstractMessageChannel(HazelcastClusterServiceBean hazelcastService, boolean orderedSubcribe) {
-    Assert.notNull(hazelcastService);
-    this.hazelcastService = hazelcastService;
-    this.hazelcastService.addMessageChannel(this, orderedSubcribe);
-  }
-    
-  @Override
-  public void sendMessage(E message) {
-    hazelcastService.publish(message, topic());
-
-  }
+  String keyspace();
   
-  public void setRegistrationId(String regID) {
-    registrationId = regID;
-    
-  }
-
-  @Override
-  public void close() {
-    hazelcastService.removeMessageChannel(this);
-  }
-
 }

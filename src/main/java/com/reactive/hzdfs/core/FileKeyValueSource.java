@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: MessageChannel.java
+* FILE: FileKeyValueSource.java
 *
 The MIT License (MIT)
 
@@ -26,24 +26,51 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.core;
 
-import com.hazelcast.core.MessageListener;
-/**
- * A publish-subscribe dual mode channel on Hazelcast.
- *
- * @param <E>
- */
-public interface MessageChannel<E> extends MessageListener<E> {
-  /**
-   * 
-   * @return Topic name
-   */
-  String topic();
-  /**
-   * Publish the message to the {@link #topic()}.
-   * @param message
-   */
-  void sendMessage(E message);
-  
+import java.io.IOException;
+import java.util.Map.Entry;
+
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.spi.NodeEngine;
+
+public class FileKeyValueSource<K,V> extends KeyValueSource<K, V> {
+
+  @Override
+  public void close() throws IOException {
+    // TODO Auto-generated method stub
+    
+  }
+
+  private NodeEngine nodeEngine;
+  @Override
+  public boolean open(NodeEngine nodeEngine) {
+    this.nodeEngine = nodeEngine;
+    return false;
+  }
+
+  @Override
+  public boolean hasNext() {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public K key() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public Entry<K, V> element() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public boolean reset() {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
 }

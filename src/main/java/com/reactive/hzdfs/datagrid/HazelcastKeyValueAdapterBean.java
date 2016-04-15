@@ -38,9 +38,9 @@ import org.springframework.data.keyvalue.core.KeyValueAdapter;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.util.Assert;
 
-import com.reactive.hzdfs.datagrid.handlers.LocalMapEntryPutListener;
-import com.reactive.hzdfs.datagrid.handlers.MembershipEventObserver;
-import com.reactive.hzdfs.datagrid.handlers.MigratedEntryProcessor;
+import com.reactive.hzdfs.datagrid.intf.LocalMapEntryPutListener;
+import com.reactive.hzdfs.datagrid.intf.MembershipEventObserver;
+import com.reactive.hzdfs.datagrid.intf.MigratedEntryProcessor;
 /**
  * A {@linkplain KeyValueAdapter} implementation for Hazelcast.
  */

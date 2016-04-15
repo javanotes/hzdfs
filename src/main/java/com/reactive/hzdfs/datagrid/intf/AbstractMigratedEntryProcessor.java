@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AbstractMembershipEventObserver.java
+* FILE: AbstractMigratedEntryProcessor.java
 *
 The MIT License (MIT)
 
@@ -26,39 +26,35 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
-import java.util.Observable;
+import java.io.Serializable;
+import java.util.Map.Entry;
 
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.map.EntryProcessor;
+/**
+ * An {@linkplain EntryProcessor} that would be invoked on all entries migrated due to a partition migration.
+ *
+ * @param <V>
+ */
+public abstract class AbstractMigratedEntryProcessor<V> implements MigratedEntryProcessor<V> {
 
-public abstract class AbstractMembershipEventObserver
-    implements MembershipEventObserver {
-
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
+  /**
+   * Handle the migrated entry value, and return a transformed value as necessary.
+   * @param key
+   * @param value
+   * @return
+   */
+  protected abstract V handleEntry(Serializable key, V value);
   @Override
-  public final void update(Observable arg0, Object arg1) {
-    
-    if(arg1 instanceof MembershipEvent)
-    {
-      
-      MembershipEvent me = (MembershipEvent) arg1;
-      switch(me.getEventType())
-      {
-        case MembershipEvent.MEMBER_ADDED:
-          handleMemberAdded(me.getMember());
-          break;
-        case MembershipEvent.MEMBER_REMOVED:
-          handleMemberRemoved(me.getMember());
-          break;
-        case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
-          MemberAttributeEvent ma = (MemberAttributeEvent) arg1;
-          handleMemberModified(ma.getMember(), ma.getOperationType());
-          break;
-          default: break;
-      }
-    }
-    
+  public Object process(Entry<Serializable, V> entry) {
+    V value = handleEntry(entry.getKey(), entry.getValue());
+    entry.setValue(value);
+    return value;
   }
-
+  
 }

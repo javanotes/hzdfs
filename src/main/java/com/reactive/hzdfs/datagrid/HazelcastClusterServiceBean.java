@@ -59,11 +59,11 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.reactive.hzdfs.datagrid.handlers.AbstractMessageChannel;
-import com.reactive.hzdfs.datagrid.handlers.LocalMapEntryPutListener;
-import com.reactive.hzdfs.datagrid.handlers.MembershipEventObserver;
-import com.reactive.hzdfs.datagrid.handlers.MessageChannel;
-import com.reactive.hzdfs.datagrid.handlers.MigratedEntryProcessor;
+import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
+import com.reactive.hzdfs.datagrid.intf.LocalMapEntryPutListener;
+import com.reactive.hzdfs.datagrid.intf.MembershipEventObserver;
+import com.reactive.hzdfs.datagrid.intf.MessageChannel;
+import com.reactive.hzdfs.datagrid.intf.MigratedEntryProcessor;
 import com.reactive.hzdfs.utils.ResourceLoaderHelper;
 
 /**

@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AbstractLocalPutMapEntryCallback.java
+* FILE: MembershipEventObserver.java
 *
 The MIT License (MIT)
 
@@ -26,28 +26,33 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.handlers;
+package com.reactive.hzdfs.datagrid.intf;
 
-import java.io.Serializable;
+import java.util.Observer;
 
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
+import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.core.Member;
+/**
+ * Member event callback.
+ */
+public interface MembershipEventObserver extends Observer{
 
-public abstract class AbstractLocalMapEntryPutListener<V>
-    implements LocalMapEntryPutListener<V> {
-
-  protected HazelcastClusterServiceBean hzService;
-  public AbstractLocalMapEntryPutListener(HazelcastClusterServiceBean hzService) {
-    this.hzService = hzService;
-    hzService.addLocalEntryListener(this);
-  }
   /**
-   * Sets an item to the IMap on which this listener is registered.
-   * @param key
-   * @param value
+   * 
+   * @param m
    */
-  public void putEntry(Serializable key, V value)
-  {
-    hzService.set(key, value, keyspace());
-  }
+  public abstract void handleMemberAdded(Member m);
+  /**
+   * 
+   * @param m
+   */
+  public abstract void handleMemberRemoved(Member m);
+  /**
+   * 
+   * @param m
+   * @param op
+   */
+  public abstract void handleMemberModified(Member m, MemberAttributeOperationType op);
+  
 
 }
