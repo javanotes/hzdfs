@@ -47,6 +47,10 @@ public class AsciiFileChunk extends FileChunk implements Serializable{
         + getFileName() + ", getFileSize()=" + getFileSize() + ", recordOffset=" + getRecordOffset() + ", bytes=" + getChunk().length +"]";
   }
 
+  public boolean isEOF()
+  {
+    return getChunk().length == 1 && getChunk()[0] == -1;
+  }
   /**
    * 
    */

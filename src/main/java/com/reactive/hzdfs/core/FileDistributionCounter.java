@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: FileShareResponse.java
+* FILE: FileDistributionCounter.java
 *
 The MIT License (MIT)
 
@@ -26,30 +26,36 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.files;
+package com.reactive.hzdfs.core;
 
-import java.util.HashSet;
-import java.util.Set;
-
-public enum FileShareResponse {
-
-  FINISH,TIMEOUT,ERROR,UNKNOWN;
-  private int errorCount;
-  private Set<String> errorNodes = new HashSet<>();
-  public int getErrorCount() {
-    return errorCount;
+class FileDistributionCounter
+{
+  long recordIdHash = -1;
+  int recordIdx = -1;
+  String fileName = null;
+  long creatTime = 0;
+  public long getRecordIdHash() {
+    return recordIdHash;
   }
-
-  public void setErrorCount(int errorCount) {
-    this.errorCount = errorCount;
+  public void setRecordIdHash(long recordIdHash) {
+    this.recordIdHash = recordIdHash;
   }
-
-  public Set<String> getErrorNodes() {
-    return errorNodes;
+  public int getRecordIdx() {
+    return recordIdx;
   }
-
-  public void setErrorNodes(Set<String> errorNodes) {
-    this.errorNodes = errorNodes;
+  public void setRecordIdx(int recordIdx) {
+    this.recordIdx = recordIdx;
   }
-  
+  public String getFileName() {
+    return fileName;
+  }
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
+  public long getCreatTime() {
+    return creatTime;
+  }
+  public void setCreatTime(long creatTime) {
+    this.creatTime = creatTime;
+  }
 }
