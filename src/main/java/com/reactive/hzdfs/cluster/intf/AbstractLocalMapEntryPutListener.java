@@ -26,11 +26,11 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.intf;
+package com.reactive.hzdfs.cluster.intf;
 
 import java.io.Serializable;
 
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 
 public abstract class AbstractLocalMapEntryPutListener<V>
     implements LocalMapEntryPutListener<V> {

@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: MigratedEntryProcessor.java
+* FILE: DFSSException.java
 *
 The MIT License (MIT)
 
@@ -26,23 +26,31 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.intf;
-
-import java.io.Serializable;
-
-import com.hazelcast.map.EntryProcessor;
+package com.reactive.hzdfs;
 /**
- * Partition migration callback on all entries of a given map.
- *
- * @param <V>
- * @see AbstractMigratedEntryProcessor
+ * Any runtime exception during distribution execution.
  */
-public interface MigratedEntryProcessor<V> extends EntryProcessor<Serializable, V>{
+public class DFSSException extends IllegalStateException {
 
   /**
-   * Gets the Map for which migrated elements will have a callback
-   * @return
+   * 
    */
-  String keyspace();
-  
+  private static final long serialVersionUID = 1L;
+
+  public DFSSException() {
+    super();
+  }
+
+  public DFSSException(String s) {
+    super(s);
+  }
+
+  public DFSSException(Throwable cause) {
+    super(cause);
+  }
+
+  public DFSSException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
 }

@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: DFSSException.java
+* FILE: Counter.java
 *
 The MIT License (MIT)
 
@@ -27,30 +27,35 @@ SOFTWARE.
 * ============================================================================
 */
 package com.reactive.hzdfs.core;
-/**
- * Any runtime exception during distribution execution.
- */
-public class DFSSException extends IllegalStateException {
 
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 1L;
-
-  public DFSSException() {
-    super();
+class Counter
+{
+  long recordIdHash = -1;
+  int recordIdx = -1;
+  String fileName = null;
+  long creatTime = 0;
+  public long getRecordIdHash() {
+    return recordIdHash;
   }
-
-  public DFSSException(String s) {
-    super(s);
+  public void setRecordIdHash(long recordIdHash) {
+    this.recordIdHash = recordIdHash;
   }
-
-  public DFSSException(Throwable cause) {
-    super(cause);
+  public int getRecordIdx() {
+    return recordIdx;
   }
-
-  public DFSSException(String message, Throwable cause) {
-    super(message, cause);
+  public void setRecordIdx(int recordIdx) {
+    this.recordIdx = recordIdx;
   }
-
+  public String getFileName() {
+    return fileName;
+  }
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
+  public long getCreatTime() {
+    return creatTime;
+  }
+  public void setCreatTime(long creatTime) {
+    this.creatTime = creatTime;
+  }
 }

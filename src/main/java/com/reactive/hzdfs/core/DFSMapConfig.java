@@ -28,13 +28,13 @@ SOFTWARE.
 */
 package com.reactive.hzdfs.core;
 
-import com.reactive.hzdfs.datagrid.IMapConfig;
+import com.reactive.hzdfs.cluster.IMapConfig;
 
 @IMapConfig(name = "REACTIVEMR", 
-idleSeconds = 2,
+idleSeconds = 1,
 statisticsOn = false, 
 backupCount = 0, 
 asyncBackupCount = 0)
-public interface DFSMapConfig {
+interface DFSMapConfig {
 
 }

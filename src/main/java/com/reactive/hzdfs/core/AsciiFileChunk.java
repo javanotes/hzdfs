@@ -38,7 +38,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.reactive.hzdfs.io.FileChunk;
 import com.reactive.hzdfs.utils.Digestor;
-
+/**
+ * Bytes chunk for a text file.
+ */
 public class AsciiFileChunk extends FileChunk implements Serializable{
 
   @Override

@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.intf;
+package com.reactive.hzdfs.cluster.intf;
 
 import com.hazelcast.core.MessageListener;
 /**

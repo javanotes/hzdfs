@@ -1,4 +1,4 @@
-package com.reactive.hzdfs.datagrid;
+package com.reactive.hzdfs.cluster;
 import java.io.IOException;
 /* ============================================================================
 *
@@ -50,6 +50,7 @@ import org.springframework.util.StringUtils;
 
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ITopic;
@@ -57,11 +58,11 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.MapListener;
-import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
-import com.reactive.hzdfs.datagrid.intf.LocalMapEntryPutListener;
-import com.reactive.hzdfs.datagrid.intf.MembershipEventObserver;
-import com.reactive.hzdfs.datagrid.intf.MessageChannel;
-import com.reactive.hzdfs.datagrid.intf.MigratedEntryProcessor;
+import com.reactive.hzdfs.cluster.intf.AbstractMessageChannel;
+import com.reactive.hzdfs.cluster.intf.LocalMapEntryPutListener;
+import com.reactive.hzdfs.cluster.intf.MembershipEventObserver;
+import com.reactive.hzdfs.cluster.intf.MessageChannel;
+import com.reactive.hzdfs.cluster.intf.MigratedEntryProcessor;
 import com.reactive.hzdfs.utils.ResourceLoaderHelper;
 
 /**
@@ -125,6 +126,15 @@ public final class HazelcastClusterServiceBean {
 	{
 	  hzInstance.addMapConfig(annotatedClass);
 	}
+	/**
+	 * Set IMap configuration programmatically. This method is to reuse the same configuration for different IMaps.
+	 * @param imapConfig
+	 * @param imap
+	 */
+	public void setMapConfiguration(IMapConfig imapConfig, String imap)
+  {
+    hzInstance.addMapConfig(imapConfig, imap);
+  }
 	/**
 	 * Asynchronous removal of a key from IMap.
 	 * @param key
@@ -526,6 +536,10 @@ public final class HazelcastClusterServiceBean {
    */
   public ICountDownLatch getClusterLatch(String latch) {
     return hzInstance.getLatch(latch);
+    
+  }
+  public IAtomicLong getAtomicLong(String key) {
+   return hzInstance.getHazelcast().getAtomicLong(key);
     
   }
   

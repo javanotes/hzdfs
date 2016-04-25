@@ -39,7 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.reactive.hzdfs.IDistributedFileSystem;
+import com.reactive.hzdfs.IDistributedFileSupport;
 import com.reactive.hzdfs.core.DFSSResponse;
 @Component
 public class TestRunner implements CommandLineRunner{
@@ -50,16 +50,17 @@ public class TestRunner implements CommandLineRunner{
   }
 
   @Autowired
-  private IDistributedFileSystem dfss;
+  private IDistributedFileSupport dfss;
   @Override
   public void run(String... args)  {
     
     log.info("-- Starting test run --" );
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\open_source_licenses_big.txt");
+    File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client.log");
     try {
       Future<DFSSResponse> fut = dfss.distribute(f);
       DFSSResponse dfs = fut.get();
       log.info("Response:- "+dfs.getSessionId()+"\t"+dfs+" map=> "+dfs.getRecordMap());
+      log.info("NoOfRecords:- "+dfs.getNoOfRecords());
     } catch (IOException e) {
       log.error("Job did not start", e);
     } catch (InterruptedException e) {

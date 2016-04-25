@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceFactoryBean;
-import com.reactive.hzdfs.datagrid.HazelcastProperties;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceFactoryBean;
+import com.reactive.hzdfs.cluster.HazelcastProperties;
 /**
  * Primary configuration class to autowire the core platform class instances and Hazelcast.
  */

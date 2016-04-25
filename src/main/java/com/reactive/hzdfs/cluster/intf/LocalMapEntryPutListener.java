@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: MembershipEventObserver.java
+* FILE: LocalMapEntryPutListener.java
 *
 The MIT License (MIT)
 
@@ -23,36 +23,26 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.intf;
+package com.reactive.hzdfs.cluster.intf;
 
-import java.util.Observer;
+import java.io.Serializable;
 
-import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.Member;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 /**
- * Member event callback.
+ * Local map entry listener on entry addition and updation
+ * @param <V>
  */
-public interface MembershipEventObserver extends Observer{
+public interface LocalMapEntryPutListener<V> extends EntryAddedListener<Serializable, V>, EntryUpdatedListener<Serializable, V>{
 
   /**
-   * 
-   * @param m
+   * Get the IMap for which migrated elements will have a callback
+   * @return
    */
-  public abstract void handleMemberAdded(Member m);
-  /**
-   * 
-   * @param m
-   */
-  public abstract void handleMemberRemoved(Member m);
-  /**
-   * 
-   * @param m
-   * @param op
-   */
-  public abstract void handleMemberModified(Member m, MemberAttributeOperationType op);
+  String keyspace();
   
-
 }

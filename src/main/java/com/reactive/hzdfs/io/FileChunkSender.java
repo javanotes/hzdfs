@@ -30,8 +30,8 @@ package com.reactive.hzdfs.io;
 
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.Configurator;
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.intf.AbstractMessageChannel;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
+import com.reactive.hzdfs.cluster.intf.AbstractMessageChannel;
 /**
  * A class to publish {@linkplain FileChunk}.
  */

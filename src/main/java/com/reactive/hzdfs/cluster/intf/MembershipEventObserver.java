@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: HazelcastProperties.java
+* FILE: MembershipEventObserver.java
 *
 The MIT License (MIT)
 
@@ -26,20 +26,33 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid;
+package com.reactive.hzdfs.cluster.intf;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Observer;
 
-public class HazelcastProperties
-{
-  private Map<String, String> props = new HashMap<>();
+import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.core.Member;
+/**
+ * Member event callback.
+ */
+public interface MembershipEventObserver extends Observer{
 
-  public Map<String, String> getProps() {
-    return props;
-  }
+  /**
+   * 
+   * @param m
+   */
+  public abstract void handleMemberAdded(Member m);
+  /**
+   * 
+   * @param m
+   */
+  public abstract void handleMemberRemoved(Member m);
+  /**
+   * 
+   * @param m
+   * @param op
+   */
+  public abstract void handleMemberModified(Member m, MemberAttributeOperationType op);
+  
 
-  public void setProps(Map<String, String> props) {
-    this.props = props;
-  }
 }

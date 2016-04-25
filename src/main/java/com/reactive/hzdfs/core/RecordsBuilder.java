@@ -35,7 +35,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 
 class RecordsBuilder{
 
@@ -94,7 +94,9 @@ class RecordsBuilder{
     
   }
   public void readAsUTF(String record, int index) {
-    log.debug("{"+name+" ["+index+"]} RECEIVED=> "+record);
+    if (log.isDebugEnabled()) {
+      log.debug("{" + name + " [" + index + "]} RECEIVED=> " + record);
+    }
     hzService.set(index, record, map);
   }
   

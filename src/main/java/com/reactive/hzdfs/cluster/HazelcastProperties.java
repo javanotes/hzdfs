@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: LocalMapEntryPutListener.java
+* FILE: HazelcastProperties.java
 *
 The MIT License (MIT)
 
@@ -23,26 +23,23 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid.intf;
+package com.reactive.hzdfs.cluster;
 
-import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
-/**
- * Local map entry listener on entry addition and updation
- * @param <V>
- */
-public interface LocalMapEntryPutListener<V> extends EntryAddedListener<Serializable, V>, EntryUpdatedListener<Serializable, V>{
+public class HazelcastProperties
+{
+  private Map<String, String> props = new HashMap<>();
 
-  /**
-   * Get the IMap for which migrated elements will have a callback
-   * @return
-   */
-  String keyspace();
-  
+  public Map<String, String> getProps() {
+    return props;
+  }
+
+  public void setProps(Map<String, String> props) {
+    this.props = props;
+  }
 }

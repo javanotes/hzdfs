@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: InstanceListener.java
+* FILE: AbstractMessageChannel.java
 *
 The MIT License (MIT)
 
@@ -26,40 +26,54 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid;
+package com.reactive.hzdfs.cluster.intf;
 
-import java.util.Observable;
+import java.io.Closeable;
 
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import org.springframework.util.Assert;
 
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 /**
- * To get notifications for member events
- * @author esutdal
+ * A base class with utility.
  *
+ * @param <E>
  */
-class InstanceListener extends Observable implements MembershipListener{
+public abstract class AbstractMessageChannel<E> implements MessageChannel<E>, Closeable {
 
-	@Override
-	public void memberRemoved(final MembershipEvent event) {
-		
-		setChanged();
-		notifyObservers(event);
-		
-		
-	}
-	
-	@Override
-	public void memberAdded(final MembershipEvent event) {
-	  setChanged();
-    notifyObservers(event);
-	}
+  /**
+   * Get the Hazelcast service bean
+   * @return
+   */
+  protected HazelcastClusterServiceBean hazelcastService;
+  protected String registrationId;
+  public String getRegistrationId() {
+    return registrationId;
+  }
 
-	@Override
-	public void memberAttributeChanged(MemberAttributeEvent event) {
-	  setChanged();
-    notifyObservers(event);
-	}
-	
+  /**
+   * 
+   * @param hazelcastService
+   */
+  public AbstractMessageChannel(HazelcastClusterServiceBean hazelcastService, boolean orderedSubcribe) {
+    Assert.notNull(hazelcastService);
+    this.hazelcastService = hazelcastService;
+    this.hazelcastService.addMessageChannel(this, orderedSubcribe);
+  }
+    
+  @Override
+  public void sendMessage(E message) {
+    hazelcastService.publish(message, topic());
+
+  }
+  
+  public void setRegistrationId(String regID) {
+    registrationId = regID;
+    
+  }
+
+  @Override
+  public void close() {
+    hazelcastService.removeMessageChannel(this);
+  }
+
 }

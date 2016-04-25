@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: IDistributedFileSystem.java
+* FILE: IDistributedFileSupport.java
 *
 The MIT License (MIT)
 
@@ -38,9 +38,9 @@ import com.reactive.hzdfs.core.DFSSResponse;
  * A facade for performing distributed (text) file operations over a Hazelcast
  * cluster. By a distributed file system, we model a {@linkplain IMap distributed map} of file records.
  * Each record is a simply a UTF8 text of each line of the file. The data distribution is, however, optimized 
- * by memory mapped reading of byte chunks instead of a plain {@linkplain BufferedReader#readLine()} iteration.
+ * by memory mapped reading of byte chunks instead of a plain {@linkplain BufferedReader#readLine()} type iteration.
  */
-public interface IDistributedFileSystem {
+public interface IDistributedFileSupport {
 
   /**
   * Distribute a local file on to Hazelcast cluster.

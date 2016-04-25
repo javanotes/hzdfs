@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid;
+package com.reactive.hzdfs.cluster;
 
 import java.util.Map.Entry;
 

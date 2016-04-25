@@ -33,6 +33,8 @@ public enum DFSSResponse {
   SUCCESS,ERROR;
   private String sessionId;
   private String recordMap;
+  private int noOfRecords;
+  private long sourceByteSize, sinkByteSize;
   public String getSessionId() {
     return sessionId;
   }
@@ -47,6 +49,30 @@ public enum DFSSResponse {
 
   public void setRecordMap(String recordMap) {
     this.recordMap = recordMap;
+  }
+
+  public int getNoOfRecords() {
+    return noOfRecords;
+  }
+
+  public void setNoOfRecords(int noOfRecords) {
+    this.noOfRecords = noOfRecords;
+  }
+
+  public long getSinkByteSize() {
+    return sinkByteSize;
+  }
+
+  public void setSinkByteSize(long sinkByteSize) {
+    this.sinkByteSize = sinkByteSize;
+  }
+
+  public long getSourceByteSize() {
+    return sourceByteSize;
+  }
+
+  public void setSourceByteSize(long sourceByteSize) {
+    this.sourceByteSize = sourceByteSize;
   }
   
  

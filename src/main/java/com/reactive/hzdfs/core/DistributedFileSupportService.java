@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: DistributedFileSystemService.java
+* FILE: DistributedFileSupportService.java
 *
 The MIT License (MIT)
 
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,121 +50,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.hazelcast.core.Message;
-import com.reactive.hzdfs.IDistributedFileSystem;
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.intf.MessageChannel;
+import com.reactive.hzdfs.IDistributedFileSupport;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
+import com.reactive.hzdfs.cluster.intf.MessageChannel;
 /**
- * Service class for distributing a text file over Hazelcast cluster. This is the facade for 
- * performing distributed file operations.
+ * Implementation class for {@linkplain IDistributedFileSupport}.
  */
 @Service
-public class DistributedFileSystemService implements MessageChannel<DFSSCommand>, IDistributedFileSystem {
+public class DistributedFileSupportService implements MessageChannel<DFSSCommand>, IDistributedFileSupport {
 
-  private static final Logger log = LoggerFactory.getLogger(DistributedFileSystemService.class);
-  @Autowired
-  private HazelcastClusterServiceBean hzService;
+  private static final Logger log = LoggerFactory.getLogger(DistributedFileSupportService.class);
+  @Autowired HazelcastClusterServiceBean hzService;
   
   /**
    * 
    */
-  public DistributedFileSystemService() {
+  public DistributedFileSupportService() {
     
   }
 
-  private class Worker implements Callable<DFSSResponse>
-  {
-    private String chunkMap;
-    private String sessionId;
-    private AsciiFileDistributor fileDist;
-    private String recordMap;
-    /**
-     * 
-     * @param chunkMap
-     */
-    private Worker(String chunkMap, File sourceFile) {
-      super();
-      this.chunkMap = chunkMap;
-      this.sourceFile = sourceFile;
-    }
-    private DistributionCounter putChunk(AsciiFileChunk chunk)
-    {
-      DistributionCounter ctr = new DistributionCounter();
-      ctr.setRecordIdHash(chunk.generateHashCode());
-      ctr.setRecordIdx(chunk.getRecordIndex());
-      ctr.setFileName(chunk.getFileName());
-      ctr.setCreatTime(chunk.getCreationTime());
-      
-      putEntry(ctr.getRecordIdHash(), chunk);
-      
-      return ctr;
-    }
-    private void putEntry(long recordIdHash, AsciiFileChunk chunk) {
-      hzService.set(recordIdHash, chunk, chunkMap);
-      
-    }
-    private final File sourceFile;
-    private void submitChunks() throws IOException
-    {
-      try(AsciiChunkReader reader = new AsciiChunkReader(sourceFile, 8192))
-      {
-        log.info("[DFSS] Start file distribution job..");
-        AsciiFileChunk chunk = null;
-        
-        DistributionCounter counter = new DistributionCounter();
-            
-        chunk = reader.readNext();
-        
-        if(chunk != null)
-        {
-          try 
-          {
-            counter = putChunk(chunk);
-            
-            while((chunk = reader.readNext()) != null)
-            {
-              counter = putChunk(chunk);
-            }
-            
-            chunk = putEOFChunk(counter);
-          } 
-          finally {
-            log.info("[DFSS] End file distribution job..");
-          }
-                  
-        }
-       }
-    }
-    
-    private AsciiFileChunk putEOFChunk(DistributionCounter counter)
-    {
-      AsciiFileChunk chunk = new AsciiFileChunk();
-      chunk.recordIndex = counter.getRecordIdx();
-      chunk.setChunk(new byte[]{-1});
-      chunk.setFileName(counter.getFileName());
-      chunk.setCreationTime(counter.getCreatTime());
-      
-      putEntry(counter.getRecordIdHash(), chunk);
-      
-      return chunk;
-    }
-    
-    @Override
-    public DFSSResponse call() throws IOException {
-      submitChunks();
-      try {
-        fileDist.awaitOnClose(10, TimeUnit.MINUTES);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      boolean b = hzService.isDistributedObjectDestroyed(fileDist.keyspace());
-      if(!b)
-        log.warn(">>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
-      DFSSResponse success = fileDist.isClosed() ? DFSSResponse.SUCCESS : DFSSResponse.ERROR;
-      success.setSessionId(sessionId);
-      success.setRecordMap(recordMap);
-      return success;
-    }
-  }
   private String commandTopicId;
   @Value("${dfss.threadCount:4}")
   private int nThreads;
@@ -205,8 +108,10 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
   @Override
   public Future<DFSSResponse> distribute(File sourceFile) throws IOException 
   {
+    log.info("[DFSS] Initiating distribution for local file "+sourceFile+"; Checking attributes..");
     checkFile(sourceFile);
-    Worker w = prepareTaskExecutor(sourceFile);
+    DFSSWorker w = prepareTaskExecutor(sourceFile);
+    log.info("[DFSS#"+w.sessionId+"] Coordinator prepared. Submitting task for execution..");
     return threads.submit(w);
   }
   private ExecutorService threads;
@@ -216,10 +121,10 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
    * @return
    * @throws IOException
    */
-  private Worker prepareTaskExecutor(File sourceFile) throws IOException
+  private DFSSWorker prepareTaskExecutor(File sourceFile) throws IOException
   {
     DFSSCommand cmd = prepareCluster(sourceFile);
-    Worker w = new Worker(sourceFile.getName().toUpperCase(), sourceFile);
+    DFSSWorker w = new DFSSWorker(this, sourceFile.getName().toUpperCase(), sourceFile);
     w.sessionId = cmd.getSessionId();
     w.fileDist = cmd.getDistInstance();
     w.recordMap = cmd.getRecordMap();
@@ -257,6 +162,7 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
   private DFSSCommand prepareCluster(File sourceFile) throws IOException {
         
     DFSSCommand cmd = new DFSSCommand();
+    log.info("[DFSS] New job created with sessionId => "+cmd.getSessionId());
     cmd.setCommand(DFSSCommand.CMD_INIT_ASCII_RCVRS);
     cmd.setChunkMap(chunkMapName(sourceFile));
     cmd.setRecordMap(cmd.getChunkMap()+"-REC");
@@ -264,12 +170,12 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
     latch = new CountDownLatch(hzService.size()-1);
     try 
     {
-      log.info("[DFSS] Preparing cluster for file distribution with sessionId => "+cmd.getSessionId());
+      log.info("[DFSS#"+cmd.getSessionId()+"] Preparing cluster for file distribution.. ");
       boolean b = latch.await(30, TimeUnit.SECONDS);
       if(!b){
         cmd.setCommand(DFSSCommand.CMD_ABORT_JOB);
         sendMessage(cmd);
-        throw new IOException("Unable to prepare cluster for distribution in 30 secs. Job aborted!");
+        throw new IOException("["+cmd.getSessionId()+"] Unable to prepare cluster for distribution in 30 secs. Job aborted!");
       }
     } 
     catch (InterruptedException e) {
@@ -277,7 +183,7 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
     }
     AsciiFileDistributor dist = createDistributorInstance(cmd);
     cmd.setDistInstance(dist);
-    log.info("[DFSS] Cluster preparation complete..");
+    log.info("[DFSS#"+cmd.getSessionId()+"] Cluster preparation complete..");
     return cmd;
   }
 
@@ -301,7 +207,7 @@ public class DistributedFileSystemService implements MessageChannel<DFSSCommand>
   {
     AsciiFileDistributor dist = new AsciiFileDistributor(hzService, cmd.getRecordMap(), cmd.getChunkMap(), cmd.getSessionId());
     distributors.put(cmd.getSessionId(), dist);
-    log.info("[DFSS] New distribution task created for session => "+cmd.getSessionId());
+    log.info("[DFSS#"+cmd.getSessionId()+"] New distribution task created for session..");
     return dist;
   }
   @Override

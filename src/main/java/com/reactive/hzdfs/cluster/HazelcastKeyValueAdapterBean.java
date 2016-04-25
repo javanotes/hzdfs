@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.datagrid;
+package com.reactive.hzdfs.cluster;
 
 import java.io.Serializable;
 import java.util.Map.Entry;
@@ -38,9 +38,9 @@ import org.springframework.data.keyvalue.core.KeyValueAdapter;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.util.Assert;
 
-import com.reactive.hzdfs.datagrid.intf.LocalMapEntryPutListener;
-import com.reactive.hzdfs.datagrid.intf.MembershipEventObserver;
-import com.reactive.hzdfs.datagrid.intf.MigratedEntryProcessor;
+import com.reactive.hzdfs.cluster.intf.LocalMapEntryPutListener;
+import com.reactive.hzdfs.cluster.intf.MembershipEventObserver;
+import com.reactive.hzdfs.cluster.intf.MigratedEntryProcessor;
 /**
  * A {@linkplain KeyValueAdapter} implementation for Hazelcast.
  */

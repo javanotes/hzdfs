@@ -43,7 +43,7 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.StringUtils;
 
-import com.reactive.hzdfs.datagrid.IMapConfig;
+import com.reactive.hzdfs.cluster.IMapConfig;
 
 public class EntityFinder {
 

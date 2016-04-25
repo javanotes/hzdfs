@@ -60,8 +60,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.Configurator;
 import com.reactive.hzdfs.OperationsException;
-import com.reactive.hzdfs.datagrid.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.datagrid.intf.MessageChannel;
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
+import com.reactive.hzdfs.cluster.intf.MessageChannel;
 /**
  * An agent that can manage sharing of {@linkplain FileChunk}. Implementation of agents can extend this class 
  * and simply provide a {@linkplain FileChunkHandler read handler} and a {@linkplain FileChunkHandler write handler}.
