@@ -26,49 +26,47 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.utils;
+package com.reactive.hzdfs;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.reactive.hzdfs.IDistributedFileSupport;
 import com.reactive.hzdfs.core.DFSSResponse;
-@Component
-public class TestRunner implements CommandLineRunner{
 
-  private static final Logger log = LoggerFactory.getLogger(TestRunner.class);
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = Server.class)
+public class TestRunner {
+
+  @Autowired
+  private IDistributedFileSupport dfss;
   public TestRunner() {
     // TODO Auto-generated constructor stub
   }
 
-  @Autowired
-  private IDistributedFileSupport dfss;
-  @Override
-  public void run(String... args)  {
+  @Test
+  public void testDistributeSimpleFile()
+  {
     
-    log.info("-- Starting test run --" );
     File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client.log");
     try {
       Future<DFSSResponse> fut = dfss.distribute(f);
       DFSSResponse dfs = fut.get();
-      log.info("Response:- "+dfs.getSessionId()+"\t"+dfs+" map=> "+dfs.getRecordMap());
-      log.info("NoOfRecords:- "+dfs.getNoOfRecords());
+      Assert.assertEquals("Records do not match", 47, dfs.getNoOfRecords());
     } catch (IOException e) {
-      log.error("Job did not start", e);
+      Assert.fail("Job did not start - "+e);
     } catch (InterruptedException e) {
-      log.info("", e);
+      //
     } catch (ExecutionException e) {
-      log.error("File distribution error", e.getCause());
+      Assert.fail("File distribution error - "+e);
     }
-    log.info("-- End test run --" );
   }
-
 }
