@@ -53,6 +53,60 @@ public class TestRunner {
   }
 
   @Test
+  public void testFailOnNonExistentFile()
+  {
+    
+    File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client-notexists.log");
+    try 
+    {
+      dfss.distribute(f);
+      Assert.fail();
+    } catch (IOException e) {
+      
+    }
+  }
+  @Test
+  public void testFailOnPDFFile()
+  {
+    
+    File f = new File("C:\\Users\\esutdal\\Documents\\test\\StreamMining.pdf");
+    try 
+    {
+      Future<DFSSResponse> fut = dfss.distribute(f);
+      fut.get();
+      Assert.fail();
+    } catch (IOException e) {
+      Assert.fail("IOException - "+e);
+    } catch (InterruptedException e) {
+      Assert.fail("InterruptedException - "+e);
+    } catch (ExecutionException e) {
+      Throwable c = e.getCause();
+      Assert.assertNotNull(c);
+      Assert.assertTrue(c instanceof IOException);
+    }
+  }
+  @Test
+  public void testFailOnPPTFile()
+  {
+    
+    File f = new File("C:\\Users\\esutdal\\Documents\\test\\Effective Problem Statement writing.pptx");
+    try 
+    {
+      Future<DFSSResponse> fut = dfss.distribute(f);
+      fut.get();
+      Assert.fail();
+    } catch (IOException e) {
+      Assert.fail("IOException - "+e);
+    } catch (InterruptedException e) {
+      Assert.fail("InterruptedException - "+e);
+    } catch (ExecutionException e) {
+      Throwable c = e.getCause();
+      Assert.assertNotNull(c);
+      Assert.assertTrue(c instanceof IOException);
+    }
+  }
+  
+  @Test
   public void testDistributeSimpleFile()
   {
     
@@ -65,9 +119,9 @@ public class TestRunner {
     } catch (IOException e) {
       Assert.fail("Job did not start - "+e);
     } catch (InterruptedException e) {
-      //
+      Assert.fail("InterruptedException - "+e);
     } catch (ExecutionException e) {
-      Assert.fail("File distribution error - "+e);
+      Assert.fail("File distribution error - "+e.getCause());
     }
   }
 }
