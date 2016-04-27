@@ -32,7 +32,6 @@ import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -61,6 +60,7 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
@@ -617,9 +617,8 @@ class HazelcastInstanceProxy {
   }
 
 
-  @SuppressWarnings("unchecked")
-  public <E> Iterator<E> getSetIterator(String string) {
-    return (Iterator<E>) hazelcast.getSet(string).iterator();
+  public ISet<?> getSet(String string) {
+    return hazelcast.getSet(string);
   }
 
 

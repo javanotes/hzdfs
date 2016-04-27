@@ -35,6 +35,6 @@ idleSeconds = 1,
 statisticsOn = false, 
 backupCount = 0, 
 asyncBackupCount = 0)
-interface DFSMapConfig {
+public interface DFSMapConfig {
 
 }

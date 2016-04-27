@@ -28,7 +28,7 @@ SOFTWARE.
 */
 package com.reactive.hzdfs.core;
 
-class Counter
+public class Counter
 {
   long recordIdHash = -1;
   int recordIdx = -1;

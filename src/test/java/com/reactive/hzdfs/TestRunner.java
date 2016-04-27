@@ -61,6 +61,7 @@ public class TestRunner {
       Future<DFSSResponse> fut = dfss.distribute(f);
       DFSSResponse dfs = fut.get();
       Assert.assertEquals("Records do not match", 47, dfs.getNoOfRecords());
+      Assert.assertTrue("error list not empty", dfs.getErrorNodes().isEmpty());
     } catch (IOException e) {
       Assert.fail("Job did not start - "+e);
     } catch (InterruptedException e) {

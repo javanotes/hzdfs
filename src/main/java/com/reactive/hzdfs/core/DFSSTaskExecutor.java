@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: DFSSWorker.java
+* FILE: DFSSTaskExecutor.java
 *
 The MIT License (MIT)
 
@@ -36,30 +36,37 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
 import com.reactive.hzdfs.DFSSException;
-
-class DFSSWorker implements Callable<DFSSResponse>
+/**
+ * The executor for a single file distribution process.
+ */
+class DFSSTaskExecutor implements Callable<DFSSResponse>
 {
-  private static final Logger log = LoggerFactory.getLogger(DFSSWorker.class);
+  private static final Logger log = LoggerFactory.getLogger(DFSSTaskExecutor.class);
   /**
    * 
    */
   private final DistributedFileSupportService dfss;
   private String chunkMap;
   String sessionId;
-  AsciiFileDistributor fileDist;
+  private final AsciiFileDistributor fileDist;
   String recordMap;
   private long consumableBytesLen = 0;
   /**
    * 
+   * @param distributedFileSupportService
    * @param chunkMap
-   * @param distributedFileSupportService TODO
+   * @param sourceFile
+   * @param fileDist
    */
-  DFSSWorker(DistributedFileSupportService distributedFileSupportService, String chunkMap, File sourceFile) {
+  DFSSTaskExecutor(DistributedFileSupportService distributedFileSupportService, String chunkMap, File sourceFile, AsciiFileDistributor fileDist) {
     super();
     this.dfss = distributedFileSupportService;
     this.chunkMap = chunkMap;
     this.sourceFile = sourceFile;
+    this.fileDist = fileDist;
   }
   private Counter putChunk(AsciiFileChunk chunk)
   {
@@ -130,28 +137,34 @@ class DFSSWorker implements Callable<DFSSResponse>
       long size = this.dfss.hzService.getAtomicLong(chunkMap).get();
       if(size != consumableBytesLen)
         throw new DFSSException("["+sessionId+"] Distributed file size mismatch! Bytes expected=> "+consumableBytesLen+" Bytes distributed=> "+size);
-      DFSSResponse success = fileDist.isClosed() ? DFSSResponse.SUCCESS : DFSSResponse.ERROR;
+      
+      ISet<String> errNodes = fileDist.errOnSynch();
+      DFSSResponse success = errNodes.isEmpty() ? DFSSResponse.SUCCESS : DFSSResponse.ERROR;
       success.setSessionId(sessionId);
       success.setRecordMap(recordMap);
       success.setNoOfRecords(this.dfss.hzService.getMap(recordMap).size());
       success.setSourceByteSize(sourceFile.length());
       success.setSinkByteSize(size);
+      success.getErrorNodes().addAll(errNodes);
+      errNodes.destroy();
       return success;
     } finally {
       this.dfss.hzService.getAtomicLong(chunkMap).destroy();
     }
   }
   @Override
-  public DFSSResponse call() throws IOException {
+  public DFSSResponse call() throws IOException 
+  {
     submitChunks();
-    try {
-      fileDist.awaitOnClose(10, TimeUnit.MINUTES);
+    try 
+    {
+      fileDist.awaitCompletion(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-    boolean b = this.dfss.hzService.isDistributedObjectDestroyed(fileDist.keyspace());
+    boolean b = this.dfss.hzService.isDistributedObjectDestroyed(fileDist.keyspace(), IMap.class);
     if(!b)
-      log.warn(">>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
+      log.info("[DFSS#"+sessionId+"] >>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
     
     return prepareResponse();
   }

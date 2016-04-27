@@ -35,6 +35,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.hazelcast.core.ISet;
+import com.hazelcast.util.UuidUtil;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 
 class RecordsBuilder{
@@ -50,6 +52,11 @@ class RecordsBuilder{
   {
     this.name = name;
     this.hzService = hzService;
+  }
+  @SuppressWarnings("unchecked")
+  ISet<AsciiFileChunk> newISetInstance()
+  {
+    return (ISet<AsciiFileChunk>) hzService.getSet(UuidUtil.createClusterUuid().toString());
   }
   /**
    * We could have simply used the Hazelcast key. But to be double sure, simply appending 
@@ -69,17 +76,25 @@ class RecordsBuilder{
   boolean handleNextChunk(AsciiFileChunk chunk, Serializable key)
   {
     String rId = makeEntryKey(key, chunk);
-    synchronized (builders) 
-    {
-      if(!builders.containsKey(rId))
-      {
-        builders.put(rId, new RecordBuilder(this, chunk.getRecordIndex(), rId));
-      }
-      
-      return builders.get(rId).handleNextChunk(chunk);
-    }    
+    return invokeRecordBuilder(rId, chunk);    
   }
-
+  private synchronized boolean invokeRecordBuilder(String rId, AsciiFileChunk chunk)
+  {
+    if(!builders.containsKey(rId))
+    {
+      builders.put(rId, new RecordBuilder(this, chunk.getRecordIndex(), rId));
+    }
+    
+    return builders.get(rId).handleNextChunk(chunk);
+  }
+  /**
+   * If any unfinished record exists
+   * @return
+   */
+  public synchronized boolean isBuildersEmpty()
+  {
+    return builders.isEmpty();
+  }
   private final Map<String, RecordBuilder> builders = new HashMap<>();
   private String map;
 

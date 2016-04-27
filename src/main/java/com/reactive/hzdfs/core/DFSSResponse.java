@@ -28,6 +28,9 @@ SOFTWARE.
 */
 package com.reactive.hzdfs.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public enum DFSSResponse {
 
   SUCCESS,ERROR;
@@ -35,6 +38,7 @@ public enum DFSSResponse {
   private String recordMap;
   private int noOfRecords;
   private long sourceByteSize, sinkByteSize;
+  private List<String> errorNodes = new ArrayList<>();
   public String getSessionId() {
     return sessionId;
   }
@@ -73,6 +77,14 @@ public enum DFSSResponse {
 
   public void setSourceByteSize(long sourceByteSize) {
     this.sourceByteSize = sourceByteSize;
+  }
+
+  public List<String> getErrorNodes() {
+    return errorNodes;
+  }
+
+  public void setErrorNodes(List<String> errorNodes) {
+    this.errorNodes = errorNodes;
   }
   
  

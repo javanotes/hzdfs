@@ -29,10 +29,10 @@ SOFTWARE.
 * ============================================================================
 */
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,10 +53,9 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.MapListener;
 import com.reactive.hzdfs.cluster.intf.AbstractMessageChannel;
 import com.reactive.hzdfs.cluster.intf.LocalMapEntryPutListener;
@@ -73,23 +72,23 @@ import com.reactive.hzdfs.utils.ResourceLoaderHelper;
  */
 public final class HazelcastClusterServiceBean {
 	
-	private HazelcastInstanceProxy hzInstance = null;
+	HazelcastInstanceProxy hzInstance = null;
 			
 	final static String REST_CONTEXT_URI = "http://@IP:@PORT/hazelcast/rest";
-	private static final Logger log = LoggerFactory.getLogger(HazelcastClusterServiceBean.class);
+	static final Logger log = LoggerFactory.getLogger(HazelcastClusterServiceBean.class);
 	
 	/**
    * Check if the distributed object is destroyed.
    * @param objectName
    * @return
    */
-  public boolean isDistributedObjectDestroyed(String objectName)
+  public boolean isDistributedObjectDestroyed(String objectName, Class<?> type)
   {
     boolean match = false;
     for(DistributedObject dObj : hzInstance.getHazelcast().getDistributedObjects())
     {
       log.debug("[isDistributedObjectDestroyed] Checking => "+dObj.getName());
-      if(dObj.getName().equals(objectName))
+      if(dObj.getName().equals(objectName) && type.isAssignableFrom(dObj.getClass()))
       {
         match = true;
         break;
@@ -212,7 +211,7 @@ public final class HazelcastClusterServiceBean {
     
   }
   				
-	private final AtomicBoolean migrationRunning = new AtomicBoolean();	
+	final AtomicBoolean migrationRunning = new AtomicBoolean();	
 	/**
 	 * Is migration ongoing
 	 * @return
@@ -221,20 +220,45 @@ public final class HazelcastClusterServiceBean {
 		return migrationRunning.compareAndSet(true, true);
 	}
 
-	private final Map<String, MigratedEntryProcessor<?>> migrCallbacks = new HashMap<>();
+	final Map<String, MigratedEntryProcessor<?>> migrCallbacks = new HashMap<>();
 	/**
-	 * Register a new partition migration listener. The listener callback will be invoked on each entry being migrated.
+	 * Register a new partition migration listener on IMap entry migration event. The listener callback will be invoked on each entry being migrated.
 	 * @param callback
-	 * @throws IllegalAccessException if service is already started
+	 * @return if no migration is running and the listener was registered
 	 */
-	public void addPartitionMigrationCallback(MigratedEntryProcessor<?> callback) throws IllegalAccessException
+	public boolean addPartitionMigrationCallback(MigratedEntryProcessor<?> callback) 
 	{
-	  if (!startedListeners) {
+	  if (!isMigrationRunning()) {
       migrCallbacks.put(callback.keyspace(), callback);
+      return true;
     }
 	  else
-      throw new IllegalAccessException("PartitionMigrationListener cannot be added after Hazelcast service has been started");
+      return false;
 	}
+	/**
+	 * De-register a partition migration listener if no migration is executing.
+	 * @param callback
+	 * @return
+	 */
+	public boolean removeMigrationCallback(MigratedEntryProcessor<?> callback) 
+  {
+    if(isMigrationRunning()) {
+      synchronized (migrationRunning) {
+        if(isMigrationRunning())
+        {
+          try {
+            migrationRunning.wait(TimeUnit.SECONDS.toMillis(30));
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
+        
+      }
+      
+    }
+    migrCallbacks.remove(callback.keyspace());
+    return true;
+  }
 	
 	/**
 	 * Register a local add/update entry listener on a given {@linkplain IMap} by name. Only a single listener for a given {@linkplain MapListener} instance would be 
@@ -269,6 +293,8 @@ public final class HazelcastClusterServiceBean {
 	  return addLocalEntryListener(addUpdateListener.keyspace(), addUpdateListener);
   }
 	private final InstanceListener instanceListener = new InstanceListener();
+	
+	final Set<String> migratingPartitions = Collections.synchronizedSet(new HashSet<String>());
 	/**
 	 * Register lifecycle listeners.
 	 */
@@ -276,52 +302,7 @@ public final class HazelcastClusterServiceBean {
 	{
 	  hzInstance.init(instanceListener);
 	  
-    hzInstance.addMigrationListener(new MigrationListener() {
-      
-      @Override
-      public void migrationStarted(MigrationEvent migrationevent) {
-        migrationRunning.getAndSet(true);
-      }
-      
-      @Override
-      public void migrationFailed(MigrationEvent migrationevent) {
-        migrationRunning.getAndSet(false);
-        synchronized (migrationRunning) {
-          migrationRunning.notifyAll();
-        }
-      }
-      
-      @Override
-      public void migrationCompleted(MigrationEvent migrationevent) 
-      {
-        migrationRunning.getAndSet(false);
-        synchronized (migrationRunning) {
-          migrationRunning.notifyAll();
-        }
-        if(migrationevent.getNewOwner().localMember())
-        {
-          log.debug(">>>>>>>>>>>>>>>>> Migration detected of partition ..."+migrationevent.getPartitionId());
-          for(Entry<String, MigratedEntryProcessor<?>> e : migrCallbacks.entrySet())
-          {
-            IMap<Serializable, Object> map = hzInstance.getMap(e.getKey());
-            Set<Serializable> keys = new HashSet<>();
-            for(Serializable key : map.localKeySet())
-            {
-              if(hzInstance.getPartitionIDForKey(key) == migrationevent.getPartitionId())
-              {
-                keys.add(key);
-              }
-            }
-            if(!keys.isEmpty())
-            {
-              map.executeOnKeys(keys, e.getValue());
-            }
-          }
-          
-        }
-        
-      }
-    });
+    hzInstance.addMigrationListener(new DefaultMigrationListener(this));
 	}
 	/**
 	 * Set a Hazelcast configuration property.
@@ -376,13 +357,14 @@ public final class HazelcastClusterServiceBean {
   }
 
   /**
-	 * Start lifecycle and partition listeners
+	 * Start lifecycle and partition listeners.
 	 */
 	public void startInstanceListeners()
 	{
 	  if (!startedListeners) {
       registerListeners();
       startedListeners = true;//silently ignore
+      log.info("Started lifecycle and partition listeners..");
     }
 	  else
 	    log.warn("[startInstanceListeners] invoked more than once. Ignored silently.");
@@ -541,6 +523,9 @@ public final class HazelcastClusterServiceBean {
   public IAtomicLong getAtomicLong(String key) {
    return hzInstance.getHazelcast().getAtomicLong(key);
     
+  }
+  public ISet<?> getSet(String set) {
+    return hzInstance.getSet(set);
   }
   
 }

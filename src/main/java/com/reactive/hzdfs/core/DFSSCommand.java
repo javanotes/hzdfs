@@ -35,7 +35,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-class DFSSCommand implements DataSerializable {
+public class DFSSCommand implements DataSerializable {
   static final String CMD_INIT_ASCII_RCVRS = "CMD_INIT_ASCII_RCVRS";
   static final String CMD_INIT_ASCII_RCVRS_ACK = "CMD_INIT_ASCII_RCVRS_ACK";
   static final String CMD_ABORT_JOB = "CMD_ABORT_JOB";
@@ -43,7 +43,7 @@ class DFSSCommand implements DataSerializable {
   private String recordMap;
   private String chunkMap;
   private String sessionId;
-  private AsciiFileDistributor distInstance;
+
   public String getRecordMap() {
     return recordMap;
   }
@@ -98,12 +98,4 @@ class DFSSCommand implements DataSerializable {
     return sessionId;
   }
 
-  public AsciiFileDistributor getDistInstance() {
-    return distInstance;
-  }
-
-  public void setDistInstance(AsciiFileDistributor distInstance) {
-    this.distInstance = distInstance;
-  }
-  
 }

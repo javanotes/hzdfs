@@ -41,7 +41,7 @@ import com.reactive.hzdfs.utils.Digestor;
 /**
  * Bytes chunk for a text file.
  */
-public class AsciiFileChunk extends FileChunk implements Serializable{
+class AsciiFileChunk extends FileChunk implements Serializable{
 
   @Override
   public String toString() {

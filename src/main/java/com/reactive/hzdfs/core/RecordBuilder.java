@@ -56,6 +56,7 @@ class RecordBuilder
     this.parent = builders;
     this.index = index;
     this.key = key;
+    
   }
   
   private final int index;
@@ -64,7 +65,8 @@ class RecordBuilder
   private void readAsUTF()
   {
     String record = new String(builder.toArray(), StandardCharsets.UTF_8);
-    try {
+    try 
+    {
       parent.remove(key);
       finalize();
     } catch (Exception e) {
@@ -75,6 +77,7 @@ class RecordBuilder
   }
   
   private ByteArrayBuilder builder = new ByteArrayBuilder();
+  
   private Set<AsciiFileChunk> orderdChunks = new TreeSet<>(new Comparator<AsciiFileChunk>() {
 
     @Override
@@ -82,10 +85,17 @@ class RecordBuilder
       return Integer.compare(o1.getOffset(), o2.getOffset());
     }
   });
+  //make this on a distributed set
+  private Set<AsciiFileChunk> orderdChunks()
+  {
+    return orderdChunks;
+    
+  }
+  
   @Override
   public void finalize()
   {
-    orderdChunks.clear();
+    orderdChunks().clear();
     orderdChunks = null;
     builder.free(false);
     builder = null;
@@ -93,7 +103,7 @@ class RecordBuilder
   }
   private void build()
   {
-    for(AsciiFileChunk c : orderdChunks)
+    for(AsciiFileChunk c : orderdChunks())
     {
       builder.append(c.getChunk());
     }
@@ -101,7 +111,7 @@ class RecordBuilder
   }
   private void append(AsciiFileChunk chunk)
   {
-    orderdChunks.add(chunk);
+    orderdChunks().add(chunk);
   }
   private void emitRecord()
   {

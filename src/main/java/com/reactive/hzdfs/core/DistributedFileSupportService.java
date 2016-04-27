@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -49,6 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.IDistributedFileSupport;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
@@ -110,7 +110,7 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
   {
     log.info("[DFSS] Initiating distribution for local file "+sourceFile+"; Checking attributes..");
     checkFile(sourceFile);
-    DFSSWorker w = prepareTaskExecutor(sourceFile);
+    DFSSTaskExecutor w = prepareTaskExecutor(sourceFile);
     log.info("[DFSS#"+w.sessionId+"] Coordinator prepared. Submitting task for execution..");
     return threads.submit(w);
   }
@@ -121,16 +121,15 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
    * @return
    * @throws IOException
    */
-  private DFSSWorker prepareTaskExecutor(File sourceFile) throws IOException
+  private DFSSTaskExecutor prepareTaskExecutor(File sourceFile) throws IOException
   {
     DFSSCommand cmd = prepareCluster(sourceFile);
-    DFSSWorker w = new DFSSWorker(this, sourceFile.getName().toUpperCase(), sourceFile);
+    DFSSTaskExecutor w = new DFSSTaskExecutor(this, sourceFile.getName().toUpperCase(), sourceFile, createDistributorInstance(cmd));
     w.sessionId = cmd.getSessionId();
-    w.fileDist = cmd.getDistInstance();
     w.recordMap = cmd.getRecordMap();
     return w;
   }
-  private CountDownLatch latch;
+  //private CountDownLatch latch;
   /**
    * 
    * @param sourceFile
@@ -150,9 +149,12 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
   private static String chunkMapName(File sourceFile)
   {
     //TODO: Using replaceAll breaks the code!!
-    return sourceFile.getName().toUpperCase()/*.replaceAll("\\.", "")*/;
+    return sourceFile.getName()/*.replaceAll("\\.", "_")*/.toUpperCase();
   }
-  
+  private ICountDownLatch sessionLatch(DFSSCommand cmd)
+  {
+    return hzService.getClusterLatch("DFSS_"+cmd.getSessionId());
+  }
   /**
    * 
    * @param sourceFile
@@ -162,44 +164,65 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
   private DFSSCommand prepareCluster(File sourceFile) throws IOException {
         
     DFSSCommand cmd = new DFSSCommand();
-    log.info("[DFSS] New job created with sessionId => "+cmd.getSessionId());
+    log.info("[DFSS] New task created with sessionId => "+cmd.getSessionId());
     cmd.setCommand(DFSSCommand.CMD_INIT_ASCII_RCVRS);
     cmd.setChunkMap(chunkMapName(sourceFile));
     cmd.setRecordMap(cmd.getChunkMap()+"-REC");
     sendMessage(cmd);
-    latch = new CountDownLatch(hzService.size()-1);
+    
+    ICountDownLatch latch = sessionLatch(cmd);
     try 
     {
       log.info("[DFSS#"+cmd.getSessionId()+"] Preparing cluster for file distribution.. ");
-      boolean b = latch.await(30, TimeUnit.SECONDS);
-      if(!b){
+      boolean b = latch.await(60, TimeUnit.SECONDS);
+      if(!b)
+      {
         cmd.setCommand(DFSSCommand.CMD_ABORT_JOB);
         sendMessage(cmd);
-        throw new IOException("["+cmd.getSessionId()+"] Unable to prepare cluster for distribution in 30 secs. Job aborted!");
+        
+        throw new IOException("["+cmd.getSessionId()+"] Unable to prepare cluster for distribution in 60 secs. Job aborted!");
       }
     } 
     catch (InterruptedException e) {
       log.debug("", e);
     }
-    AsciiFileDistributor dist = createDistributorInstance(cmd);
-    cmd.setDistInstance(dist);
+    finally
+    {
+      latch.destroy();
+    }
+    
     log.info("[DFSS#"+cmd.getSessionId()+"] Cluster preparation complete..");
     return cmd;
   }
 
   private final Map<String, AsciiFileDistributor> distributors = new WeakHashMap<>();
+  /**
+   * 
+   * @param sessionId
+   */
   private void removeDistributor(String sessionId)
   {
     AsciiFileDistributor dist = distributors.remove(sessionId);
     if(dist != null)
-      dist.close();
+    {
+      //destroy will be invoked multiple times on the same DO, but we are ignoring it
+      clean(dist);
+    }
   }
+  private static void clean(AsciiFileDistributor dist)
+  {
+    dist.close();
+    dist.destroyTempDO();
+  }
+  /**
+   * 
+   */
   private void removeAllDistributor()
   {
     for(Iterator<AsciiFileDistributor> iter = distributors.values().iterator(); iter.hasNext();)
     {
       AsciiFileDistributor afd = iter.next();
-      afd.close();
+      clean(afd);
       iter.remove();
     }
   }
@@ -221,18 +244,8 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
       {
         //will be closed by self
         createDistributorInstance(cmd);
-        cmd.setCommand(DFSSCommand.CMD_INIT_ASCII_RCVRS_ACK);
-        sendMessage(cmd);
-        
+        sessionLatch(cmd).countDown();
       }
-    }
-    else if(DFSSCommand.CMD_INIT_ASCII_RCVRS_ACK.equals(cmd.getCommand()))
-    {
-      if(latch != null)
-      {
-        latch.countDown();
-      }
-      
     }
     else if(DFSSCommand.CMD_ABORT_JOB.equals(cmd.getCommand()))
     {

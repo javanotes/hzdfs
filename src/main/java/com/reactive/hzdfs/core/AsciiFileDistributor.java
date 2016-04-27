@@ -40,7 +40,10 @@ import org.slf4j.LoggerFactory;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.DFSSException;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
@@ -93,8 +96,20 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     return distributionMap;
   }
   
-  private ConcurrentMap<String, RecordsBuilder> builders = new ConcurrentHashMap<>();
-  
+  private final ConcurrentMap<String, RecordsBuilder> builders = new ConcurrentHashMap<>();
+  /**
+   * If any unfinished record exists
+   * @return
+   */
+  public boolean isAppendableRecordExist()
+  {
+    for(RecordsBuilder rb : builders.values())
+    {
+      if(!rb.isBuildersEmpty())
+        return true;
+    }
+    return false;
+  }
   static String makeFileKey(AsciiFileChunk chunk)
   {
     return chunk.getFileName() + "." + chunk.getCreationTime();
@@ -116,7 +131,12 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
       builders.putIfAbsent(fileKey, rBuilder);
     }
     boolean b = builders.get(fileKey).handleNextChunk(chunk, key);
-    recordEmitted.compareAndSet(!b, b);
+    if(recordEmitted.compareAndSet(!b, b) && iswaitForLastEmittedRecord)
+    {
+      synchronized (this) {
+        notifyAll();
+      }
+    }
     
     if(chunk.isEOF()){
       builders.remove(fileKey);
@@ -130,107 +150,209 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     }
     handleNextChunk(event.getKey(), event.getValue());
   }
+  private volatile boolean isawaitAckFromMembers;
+  /**
+   * 
+   * @return
+   */
+  ILock getClusterLock()
+  {
+    return (ILock) hzService.getClusterLock(getSessionId());
+  }
   
-  private void awaitAckFromMembers() {
+  /**
+   * 
+   */
+  private void awaitAckFromMembers() 
+  {
     log.info("[DFSS#"+sessionId+"] EOF chunk received. Start sync with cluster members to signal end of distribution.");
+    isawaitAckFromMembers = true;
     ICountDownLatch latch = hzService.getClusterLatch(topic());
     sendMessage(END_OF_DATA);
-    try {
+    try 
+    {
       boolean b = latch.await(60, TimeUnit.SECONDS);
       if(!b)
         throw new DFSSException("["+sessionId+"] Unable to acquire EOF ack from members in 60 secs. Check node which could not emit final record.");
-    } catch (InterruptedException e1) {
+    } 
+    catch (InterruptedException e1) 
+    {
       log.debug("", e1);
     }
     finally
     {
+      isawaitAckFromMembers = false;
       latch.destroy();
-      close();
+      cleanSlate();
     }
     log.info("[DFSS#"+sessionId+"] Synch completed successfully. Marking as end of job.");
   }
+  
+  private void cleanSlate()
+  {
+    close();
+    destroyTempDO();
+    unlock();
+    log.info("[DFSS#"+sessionId+"] Clean slate done..");
+  }
+  /**
+   * Signal to the coordinator that all chunk readers have synched.
+   */
+  private void unlock() {
+    ILock lock = getClusterLock();
+    lock.lock();
+    try
+    {
+      lock.newCondition(getSessionId()).signalAll();
+    }
+    finally
+    {
+      lock.unlock();
+    }
+    
+  }
+
 
   @Override
   public void entryUpdated(EntryEvent<Serializable, AsciiFileChunk> event) {
     entryAdded(event);
 
   }
-  private final Object closeLock = new Object();
+  
   /**
-   * To await when this instance is closed. That would signal an end of execution for this task.
+   * To await when the job has been ended. That is to say, until all chunks have been distributed and acknowledgement (success/error)
+   * received from all chunk receivers.
    * @param time
    * @param unit
    * @throws InterruptedException
    */
-  void awaitOnClose(long time, TimeUnit unit) throws InterruptedException
+  void awaitCompletion(long time, TimeUnit unit) throws InterruptedException
   {
-    if(!closed)
+    ILock lock = getClusterLock();
+    lock.lock();
+    try
     {
-      synchronized (closeLock) {
-        if(!closed)
-        {
-          closeLock.wait(unit.toMillis(time));
-        }
-        
-      }
+      lock.newCondition(getSessionId()).await(time, unit);
+    }
+    finally
+    {
+      lock.unlock();
+      lock.destroy();
     }
   }
   private volatile boolean closed;
   public boolean isClosed() {
     return closed;
   }
-
-
+  
   @Override
   public void close()  {
-    synchronized (closeLock) {
-      if (!closed) {
-        removeMapListener();
-        hzService.removeMessageChannel(topic(), topicRegId);
-        builders.clear();
-        IMap<?, ?> map = (IMap<?, ?>) hzService.getMap(keyspace());
-        map.destroy();
-        hzService.getTopic(topic()).destroy();
-        closed = true;
-        
-      }
-      closeLock.notifyAll();
+    if (!closed) 
+    {
+      removeMapListener();
+      hzService.removeMessageChannel(topic(), topicRegId);
+      builders.clear();
+      closed = true;
+      
     }
   }
-
+  /**
+   * To destroy the common intermediate distributed data structures used.
+   */
+  void destroyTempDO()
+  {
+    if(!hzService.isDistributedObjectDestroyed(keyspace(), IMap.class))
+    {
+      IMap<?, ?> map = (IMap<?, ?>) hzService.getMap(keyspace());
+      map.destroy();
+      log.debug("[DFSS#"+sessionId+"] Temporary IMap destroyed.."+keyspace());
+    }
+    if(!hzService.isDistributedObjectDestroyed(topic(), ITopic.class)){
+      hzService.getTopic(topic()).destroy();
+      log.debug("[DFSS#"+sessionId+"] Temporary ITopic destroyed.."+topic());
+    }
+    
+  }
+  private void onEOFSignalled()
+  {
+    log.info("[DFSS#"+sessionId+"] EOF synch signal was received. Should expect no more chunks. Waiting for 30 secs.");
+    try 
+    {
+      if (recordEmitted.compareAndSet(false, false)) {
+        waitForLastEmittedRecord(30, TimeUnit.SECONDS);
+      }
+      if(!recordEmitted.get() || isAppendableRecordExist())
+      {
+        signalEOFErrAck();
+      }
+      else
+        signalEOFAck();
+    } 
+    finally {
+      close();
+    }
+  }
   @Override
   public void onMessage(Message<String> message) {
     if(!message.getPublishingMember().localMember())
     {
       if(END_OF_DATA.equals(message.getMessageObject()))
       {
-        log.info("[DFSS#"+sessionId+"] EOF synch signal was received. Should expect no more chunks. Waiting for 10 secs.");
-        try 
-        {
-          waitForLastEmittedRecord();
-          if(!recordEmitted.get())
-          {
-            throw new DFSSException("["+sessionId+"] Final record did not emit on this node after EOF was received!");
-          }
-          ICountDownLatch latch = hzService.getClusterLatch(topic());
-          latch.countDown();
-          log.info("[DFSS#"+sessionId+"] ACK signalled for end of job.");
-        } finally {
-          close();
-        }
+        onEOFSignalled();
       }
-      
+      //these will be executed on the node that received the EOF chunk.
+      else if(isawaitAckFromMembers && ERR_INCOMPLETE_REC.equals(message.getMessageObject()))
+      {
+        log.error("[DFSS#"+sessionId+"] ERR_INCOMPLETE_REC synch ack was received from "+message.getPublishingMember());
+        errOnSynch().add(message.getPublishingMember().toString());
+        countdownEOFLatch();
+      }
+      else if(isawaitAckFromMembers && END_OF_DATA_ACK.equals(message.getMessageObject()))
+      {
+        log.info("[DFSS#"+sessionId+"] END_OF_DATA_ACK synch ack was received from "+message.getPublishingMember());
+        countdownEOFLatch();
+      }
     }
     
   }
-
-  private void waitForLastEmittedRecord() {
-    if(!recordEmitted.get()){
-      try {
-        wait(10000);
-      } catch (InterruptedException e) {
-        
-      }
+  @SuppressWarnings("unchecked")
+  public ISet<String> errOnSynch()
+  {
+    return (ISet<String>) hzService.getSet(getSessionId());
+  }
+  private void countdownEOFLatch()
+  {
+    ICountDownLatch latch = hzService.getClusterLatch(topic());
+    latch.countDown();
+  }
+  private void signalEOFAck()
+  {
+    sendMessage(END_OF_DATA_ACK);
+    log.info("[DFSS#"+sessionId+"] ACK signalled for end of job.");
+  }
+  private void signalEOFErrAck()
+  {
+    log.error("["+sessionId+"] Final record did not emit on this node after EOF was received!");
+    sendMessage(ERR_INCOMPLETE_REC);
+  }
+  private volatile boolean iswaitForLastEmittedRecord;
+  
+  /**
+   * 
+   */
+  private synchronized void waitForLastEmittedRecord(long time, TimeUnit unit) 
+  {
+    iswaitForLastEmittedRecord = true;
+    try 
+    {
+      wait(unit.toMillis(time));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.debug("", e);
+    }
+    finally
+    {
+      iswaitForLastEmittedRecord = false;
     }
         
   }
@@ -252,5 +374,6 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
 
   static final String END_OF_DATA = "END_OF_DATA";
   static final String END_OF_DATA_ACK = "END_OF_DATA_ACK";
+  static final String ERR_INCOMPLETE_REC = "ERR_INCOMPLETE_REC";
     
 }

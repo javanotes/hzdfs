@@ -28,14 +28,22 @@ SOFTWARE.
 */
 package com.reactive.hzdfs;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
+import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceFactoryBean;
 import com.reactive.hzdfs.cluster.HazelcastProperties;
+import com.reactive.hzdfs.cluster.intf.MigratedEntryProcessor;
+import com.reactive.hzdfs.utils.EntityFinder;
 /**
  * Primary configuration class to autowire the core platform class instances and Hazelcast.
  */
@@ -93,5 +101,25 @@ public class Configurator {
     return hazelcastFactory;
     
   }
+  @PostConstruct  
+  private void init() throws Exception
+  {
+    HazelcastClusterServiceBean hz = hzServiceFactoryBean().getObject();
+    for(MigratedEntryProcessor<?> migrP : discoverMigrationListeners())
+    {
+      hz.addPartitionMigrationCallback(migrP);
+    }
+    hz.startInstanceListeners();
+  }
+  @SuppressWarnings("rawtypes")
+  private List<MigratedEntryProcessor<?>> discoverMigrationListeners() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    List<Class<MigratedEntryProcessor>> classes = EntityFinder.findImplementationClasses(getClass().getPackage().getName(), MigratedEntryProcessor.class);
+    List<MigratedEntryProcessor<?>> instances = new ArrayList<>(classes.size());
+    for(Class<MigratedEntryProcessor> _class : classes)
+    {
+      instances.add(_class.newInstance());
+    }
+    return instances;
     
+  }
 }
