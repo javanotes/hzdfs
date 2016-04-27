@@ -55,20 +55,21 @@ public class TestRunner {
   @Test
   public void testFailOnNonExistentFile()
   {
-    
+    Object ex = null;
     File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client-notexists.log");
     try 
     {
       dfss.distribute(f);
       Assert.fail();
     } catch (IOException e) {
-      
+      ex = e;
     }
+    Assert.assertNotNull(ex);
   }
   @Test
   public void testFailOnPDFFile()
   {
-    
+    Throwable c = null;
     File f = new File("C:\\Users\\esutdal\\Documents\\test\\StreamMining.pdf");
     try 
     {
@@ -80,15 +81,17 @@ public class TestRunner {
     } catch (InterruptedException e) {
       Assert.fail("InterruptedException - "+e);
     } catch (ExecutionException e) {
-      Throwable c = e.getCause();
-      Assert.assertNotNull(c);
-      Assert.assertTrue(c instanceof IOException);
+      c = e.getCause();
+      
     }
+    Assert.assertNotNull(c);
+    Assert.assertTrue(c instanceof DFSSException);
+    Assert.assertEquals(DFSSException.ERR_IO_EXCEPTION, ((DFSSException) c).getErrorCode());
   }
   @Test
   public void testFailOnPPTFile()
   {
-    
+    Throwable c = null;
     File f = new File("C:\\Users\\esutdal\\Documents\\test\\Effective Problem Statement writing.pptx");
     try 
     {
@@ -100,10 +103,12 @@ public class TestRunner {
     } catch (InterruptedException e) {
       Assert.fail("InterruptedException - "+e);
     } catch (ExecutionException e) {
-      Throwable c = e.getCause();
-      Assert.assertNotNull(c);
-      Assert.assertTrue(c instanceof IOException);
+      c = e.getCause();
+      
     }
+    Assert.assertNotNull(c);
+    Assert.assertTrue(c instanceof DFSSException);
+    Assert.assertEquals(DFSSException.ERR_IO_EXCEPTION, ((DFSSException) c).getErrorCode());
   }
   
   @Test

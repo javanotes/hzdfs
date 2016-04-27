@@ -84,9 +84,7 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
         return t;
       }
     });
-    log.info("-------------------------------------");
-    log.info("File distribution service initialized");
-    log.info("-------------------------------------");
+    log.info("-- File distribution service initialized --");
   }
   @PreDestroy
   private void destroy()
@@ -164,7 +162,7 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
   private DFSSCommand prepareCluster(File sourceFile) throws IOException {
         
     DFSSCommand cmd = new DFSSCommand();
-    log.info("[DFSS] New task created with sessionId => "+cmd.getSessionId());
+    log.info("[DFSS] New task created with sessionId => "+cmd.getSessionId()+" for file => "+sourceFile);
     cmd.setCommand(DFSSCommand.CMD_INIT_ASCII_RCVRS);
     cmd.setChunkMap(chunkMapName(sourceFile));
     cmd.setRecordMap(cmd.getChunkMap()+"-REC");

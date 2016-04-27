@@ -86,7 +86,7 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
   }
   private final File sourceFile;
   
-  private void submitChunks() throws IOException
+  private void submitChunks() throws IOException 
   {
     try(AsciiChunkReader reader = new AsciiChunkReader(sourceFile, 8192))
     {
@@ -95,7 +95,13 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
       
       Counter counter = new Counter();
           
-      chunk = reader.readNext();
+      try {
+        chunk = reader.readNext();
+      } catch (IOException e) {
+        DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
+        dfse.setErrorCode(DFSSException.ERR_IO_RW_EXCEPTION);
+        throw dfse;
+      }
       
       if(chunk != null)
       {
@@ -103,9 +109,15 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
         {
           counter = putChunk(chunk);
           
-          while((chunk = reader.readNext()) != null)
-          {
-            counter = putChunk(chunk);
+          try {
+            while((chunk = reader.readNext()) != null)
+            {
+              counter = putChunk(chunk);
+            }
+          } catch (IOException e) {
+            DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
+            dfse.setErrorCode(DFSSException.ERR_IO_RW_EXCEPTION);
+            throw dfse;
           }
           
           chunk = putEOFChunk(counter);
@@ -153,9 +165,16 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
     }
   }
   @Override
-  public DFSSResponse call() throws IOException 
+  public DFSSResponse call() throws DFSSException
   {
-    submitChunks();
+    try 
+    {
+      submitChunks();
+    } catch (IOException e) {
+      DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
+      dfse.setErrorCode(DFSSException.ERR_IO_EXCEPTION);
+      throw dfse;
+    }
     try 
     {
       fileDist.awaitCompletion(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -164,7 +183,7 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
     }
     boolean b = this.dfss.hzService.isDistributedObjectDestroyed(fileDist.keyspace(), IMap.class);
     if(!b)
-      log.info("[DFSS#"+sessionId+"] >>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
+      log.warn("[DFSS#"+sessionId+"] >>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
     
     return prepareResponse();
   }

@@ -32,6 +32,10 @@ package com.reactive.hzdfs;
  */
 public class DFSSException extends IllegalStateException {
 
+  public static final String ERR_IO_EXCEPTION = "001";
+  public static final String ERR_IO_RW_EXCEPTION = "00w";
+  public static final String ERR_RT_EXCEPTION = "000";
+  private String errorCode = ERR_RT_EXCEPTION;
   /**
    * 
    */
@@ -51,6 +55,14 @@ public class DFSSException extends IllegalStateException {
 
   public DFSSException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+  public String getErrorCode() {
+    return errorCode;
+  }
+
+  public void setErrorCode(String errorCode) {
+    this.errorCode = errorCode;
   }
 
 }
