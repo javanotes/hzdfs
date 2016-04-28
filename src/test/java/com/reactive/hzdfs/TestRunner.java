@@ -43,6 +43,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.dto.DFSSResponse;
 import com.reactive.hzdfs.dto.DFSSTaskConfig;
+import com.reactive.hzdfs.utils.ResourceLoaderHelper;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Server.class)
@@ -60,7 +61,7 @@ public class TestRunner {
   public void testFailOnNonExistentFile()
   {
     Object ex = null;
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client-notexists.log");
+    File f = new File("vp-client-notexists.log");
     try 
     {
       dfss.distribute(f, new DFSSTaskConfig());
@@ -71,12 +72,13 @@ public class TestRunner {
     Assert.assertNotNull(ex);
   }
   @Test
-  public void testFailOnPDFFile()
+  public void testFailOnZIPFile()
   {
     Throwable c = null;
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\StreamMining.pdf");
+    
     try 
     {
+      File f = ResourceLoaderHelper.loadFromFileOrClassPath("text_example.zip");
       Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
       fut.get();
       Assert.fail();
@@ -96,9 +98,10 @@ public class TestRunner {
   public void testFailOnPPTFile()
   {
     Throwable c = null;
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\Effective Problem Statement writing.pptx");
+    
     try 
     {
+      File f = ResourceLoaderHelper.loadFromFileOrClassPath("Presentation1.pptx");
       Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
       fut.get();
       Assert.fail();
@@ -119,9 +122,10 @@ public class TestRunner {
   public void testDistributeSimpleFile()
   {
     
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\vp-client.log");
+    
     try 
     {
+      File f = ResourceLoaderHelper.loadFromFileOrClassPath("vp-client.log");
       Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
       DFSSResponse dfs = fut.get();
       Assert.assertEquals("Records do not match", 48, dfs.getNoOfRecords());
@@ -163,9 +167,10 @@ public class TestRunner {
   public void testDistributedSimpleFileRecords()
   {
     DFSSResponse resp = null;
-    File f = new File("C:\\Users\\esutdal\\Documents\\test\\AirPassengers.csv");
+    
     try 
     {
+      File f = ResourceLoaderHelper.loadFromFileOrClassPath("AirPassengers.csv");
       Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
       resp = fut.get();
       Assert.assertNotNull(resp);

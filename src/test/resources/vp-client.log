@@ -1,0 +1,48 @@
+Line 1
+12/18/2015 12:32:43 PM	Warning	Console	id=96870 user=esutdal@ERICSSON.SE msg="Logs were cleared"
+12/18/2015 12:32:46 PM	Notice	VPN	id=96573 user=esutdal@ERICSSON.SE msg="VPN before logon was disabled" vpntype=ipsec
+12/18/2015 12:32:46 PM	Notice	ESNAC	id=96951 user=esutdal@ERICSSON.SE msg="Endpoint control policy synchronization was enabled"
+12/18/2015 12:32:46 PM	Notice	Console	id=96880 user=esutdal@ERICSSON.SE msg="User disabled WAN Acceleration"
+12/18/2015 12:32:46 PM	Warning	SSOMA	id=96982 user=esutdal@ERICSSON.SE msg="Single Sign-On Mobility Agent was disabled"
+12/18/2015 12:32:46 PM	Warning	Console	id=96840 user=esutdal@ERICSSON.SE msg="Fortiproxy is disabled"
+12/18/2015 12:32:50 PM	Debug	Scheduler	GUI change event
+12/18/2015 12:32:50 PM	Debug	Update	Update task is called with dwSession=-1
+12/18/2015 12:32:50 PM	Debug	Update	forticlient.fortinet.net
+12/18/2015 12:32:50 PM	Debug	Update	start_update_thread() called
+12/18/2015 12:32:50 PM	Debug	Update	Impersonated=0
+12/18/2015 12:32:50 PM	Debug	Update	update started...
+12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000 12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FSCI00000000000000000000
+12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 00000000FDNI00000000000000000000
+12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 01000000FECT00000000000000000000
+12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 05004000FVEN00800054009999999999
+12/18/2015 12:32:50 PM	Debug	Update	update process sending request: 05004000FCBN00000000009999999999
+12/18/2015 12:32:50 PM	Debug	Update	updatetask get virus info file failed
+12/18/2015 12:32:52 PM	Debug	Update	update process received object(1 of 3): FCPR
+12/18/2015 12:32:52 PM	Debug	Update	update process received object(2 of 3): FDNI
+12/18/2015 12:32:52 PM	Debug	Update	update process received object(3 of 3): FECT
+12/18/2015 12:32:52 PM	Debug	Update	update done
+12/18/2015 12:32:52 PM	Debug	Update	update thread exit
+12/18/2015 12:32:52 PM	Debug	Update	No update is available.
+12/18/2015 12:32:52 PM	Debug	Scheduler	FortiTrayApp : Received WM_USER_UPDATE_SUCCESS message, lParam=0x1
+12/18/2015 12:32:52 PM	Debug	Scheduler	GUI change event
+12/18/2015 12:32:54 PM	Debug	ESNAC	dwSilentReg false
+12/18/2015 12:32:54 PM	Debug	ESNAC	bFirstKA true
+12/18/2015 12:32:54 PM	Debug	ESNAC	Start searching for FGT
+12/18/2015 12:32:54 PM	Debug	ESNAC	Searching Default GW
+12/18/2015 12:32:54 PM	Debug	Scheduler	handle_processtermination() called
+12/18/2015 12:32:54 PM	Debug	Scheduler	child process terminates normally
+12/18/2015 12:32:54 PM	Debug	Scheduler	handle_processtermination() called
+12/18/2015 12:32:54 PM	Debug	Scheduler	child process terminates normally
+12/18/2015 12:32:55 PM	Debug	ESNAC	Timeout in select in SocketConnect
+12/18/2015 12:32:55 PM	Debug	ESNAC	Socket connect failed
+12/18/2015 12:32:55 PM	Debug	ESNAC	169.144.52.1:8013, Secondary - 0
+12/18/2015 12:32:55 PM	Debug	ESNAC	End searching for FGT
+12/18/2015 12:33:14 PM	Debug	ESNAC	dwSilentReg false
+12/18/2015 12:33:14 PM	Debug	ESNAC	bFirstKA true
+12/18/2015 12:33:14 PM	Debug	ESNAC	Start searching for FGT
+12/18/2015 12:33:14 PM	Debug	ESNAC	Searching Default GW
+12/18/2015 12:33:15 PM	Debug	ESNAC	Timeout in select in SocketConnect
+12/18/2015 12:33:15 PM	Debug	ESNAC	Socket connect failed
+12/18/2015 12:33:15 PM	Debug	ESNAC	169.144.52.1:8013, Secondary - 0
+12/18/2015 12:33:15 PM	Debug	ESNAC	End searching for FGT
+090033924427795
