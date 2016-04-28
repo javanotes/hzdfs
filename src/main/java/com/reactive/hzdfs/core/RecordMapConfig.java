@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: DFSSResponse.java
+* FILE: RecordMapConfig.java
 *
 The MIT License (MIT)
 
@@ -28,65 +28,12 @@ SOFTWARE.
 */
 package com.reactive.hzdfs.core;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.reactive.hzdfs.cluster.IMapConfig;
 
-public enum DFSSResponse {
-
-  SUCCESS,ERROR;
-  private String sessionId;
-  private String recordMap;
-  private int noOfRecords;
-  private long sourceByteSize, sinkByteSize;
-  private List<String> errorNodes = new ArrayList<>();
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  public String getRecordMap() {
-    return recordMap;
-  }
-
-  public void setRecordMap(String recordMap) {
-    this.recordMap = recordMap;
-  }
-
-  public int getNoOfRecords() {
-    return noOfRecords;
-  }
-
-  public void setNoOfRecords(int noOfRecords) {
-    this.noOfRecords = noOfRecords;
-  }
-
-  public long getSinkByteSize() {
-    return sinkByteSize;
-  }
-
-  public void setSinkByteSize(long sinkByteSize) {
-    this.sinkByteSize = sinkByteSize;
-  }
-
-  public long getSourceByteSize() {
-    return sourceByteSize;
-  }
-
-  public void setSourceByteSize(long sourceByteSize) {
-    this.sourceByteSize = sourceByteSize;
-  }
-
-  public List<String> getErrorNodes() {
-    return errorNodes;
-  }
-
-  public void setErrorNodes(List<String> errorNodes) {
-    this.errorNodes = errorNodes;
-  }
-  
- 
+@IMapConfig(name = "RECORDMAP", 
+statisticsOn = false, 
+backupCount = 1, 
+asyncBackupCount = 1)
+interface RecordMapConfig {
 
 }

@@ -671,4 +671,9 @@ class HazelcastInstanceProxy {
     return hazelcast.getCountDownLatch(latch);
     
   }
+
+
+  public Member me() {
+    return hazelcast.getCluster().getLocalMember();
+  }
 }

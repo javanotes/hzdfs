@@ -33,8 +33,9 @@ import com.reactive.hzdfs.cluster.IMapConfig;
 @IMapConfig(name = "REACTIVEMR", 
 idleSeconds = 1,
 statisticsOn = false, 
+inMemoryFormat = "OBJECT",
 backupCount = 0, 
 asyncBackupCount = 0)
-public interface DFSMapConfig {
+interface DFSMapConfig {
 
 }

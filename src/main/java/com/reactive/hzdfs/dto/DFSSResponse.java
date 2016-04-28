@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: DFSSException.java
+* FILE: DFSSResponse.java
 *
 The MIT License (MIT)
 
@@ -26,46 +26,67 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs;
-/**
- * Any runtime exception during distribution execution.
- */
-public class DFSSException extends Exception {
+package com.reactive.hzdfs.dto;
 
-  public static final String ERR_IO_FILE = "001";
-  public static final String ERR_IO_OPERATION = "002";
-  public static final String ERR_IO_TIMEOUT = "003";
-  public static final String ERR_INCOMPLETE_REC = "020";
-  public static final String ERR_RUNTIME = "000";
+import java.util.ArrayList;
+import java.util.List;
+
+public enum DFSSResponse {
+
+  COMPLETE,ERROR, TIMEOUT;
+  private String sessionId;
+  private String recordMap;
+  private int noOfRecords;
+  private long sourceByteSize, sinkByteSize;
+  private List<String> errorNodes = new ArrayList<>();
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  public String getRecordMap() {
+    return recordMap;
+  }
+
+  public void setRecordMap(String recordMap) {
+    this.recordMap = recordMap;
+  }
+
+  public int getNoOfRecords() {
+    return noOfRecords;
+  }
+
+  public void setNoOfRecords(int noOfRecords) {
+    this.noOfRecords = noOfRecords;
+  }
+
+  public long getSinkByteSize() {
+    return sinkByteSize;
+  }
+
+  public void setSinkByteSize(long sinkByteSize) {
+    this.sinkByteSize = sinkByteSize;
+  }
+
+  public long getSourceByteSize() {
+    return sourceByteSize;
+  }
+
+  public void setSourceByteSize(long sourceByteSize) {
+    this.sourceByteSize = sourceByteSize;
+  }
+
+  public List<String> getErrorNodes() {
+    return errorNodes;
+  }
+
+  public void setErrorNodes(List<String> errorNodes) {
+    this.errorNodes = errorNodes;
+  }
   
-  private String errorCode = ERR_RUNTIME;
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 1L;
-
-  public DFSSException() {
-    super();
-  }
-
-  public DFSSException(String s) {
-    super(s);
-  }
-
-  public DFSSException(Throwable cause) {
-    super(cause);
-  }
-
-  public DFSSException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public String getErrorCode() {
-    return errorCode;
-  }
-
-  public void setErrorCode(String errorCode) {
-    this.errorCode = errorCode;
-  }
+ 
 
 }

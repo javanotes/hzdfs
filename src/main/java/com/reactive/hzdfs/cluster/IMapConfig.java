@@ -56,16 +56,40 @@ public @interface IMapConfig {
    * @return
    */
   String inMemoryFormat() default "BINARY";
+  /**
+   * 
+   * @return
+   */
   int backupCount() default 1;
+  /**
+   * 
+   * @return
+   */
   int asyncBackupCount() default 0;
+  /**
+   * 
+   * @return
+   */
   int ttlSeconds()default 0;
+  /**
+   * 
+   * @return
+   */
   int idleSeconds()default 0;
   /**
    * LRU, LFU, NONE
    * @return
    */
   String evictPolicy() default "NONE";
+  /**
+   * 
+   * @return
+   */
   int evictPercentage() default 25;
+  /**
+   * 
+   * @return
+   */
   int maxSize() default 0;
   /**
    * 
@@ -74,6 +98,14 @@ public @interface IMapConfig {
         
    */
   String maxSizePolicy() default "PER_NODE";
+  /**
+   * 
+   * @return
+   */
   long evictCheckMillis() default 100;
+  /**
+   * 
+   * @return
+   */
   boolean statisticsOn() default true;
 }

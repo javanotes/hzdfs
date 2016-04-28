@@ -26,23 +26,28 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.core;
+package com.reactive.hzdfs.dto;
 
 import java.io.IOException;
 import java.util.UUID;
+
+import org.springframework.util.Assert;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-public class DFSSCommand implements DataSerializable {
-  static final String CMD_INIT_ASCII_RCVRS = "CMD_INIT_ASCII_RCVRS";
-  static final String CMD_INIT_ASCII_RCVRS_ACK = "CMD_INIT_ASCII_RCVRS_ACK";
-  static final String CMD_ABORT_JOB = "CMD_ABORT_JOB";
+public class DFSSCommand implements DataSerializable 
+{
+  public static final String CMD_INIT_ASCII_RCVRS = "CMD_INIT_ASCII_RCVRS";
+  public static final String CMD_INIT_ASCII_RCVRS_ACK = "CMD_INIT_ASCII_RCVRS_ACK";
+  public static final String CMD_ABORT_JOB = "CMD_ABORT_JOB";
+  
   private String command;
   private String recordMap;
   private String chunkMap;
   private String sessionId;
+  private DFSSTaskConfig config;
 
   public String getRecordMap() {
     return recordMap;
@@ -76,6 +81,9 @@ public class DFSSCommand implements DataSerializable {
     out.writeUTF(recordMap);
     out.writeUTF(chunkMap);
     out.writeUTF(sessionId);
+    Assert.notNull(config, "DFSSTaskConfig is null");
+    config.getEofSyncAckAwaitTime().writeData(out);
+    config.getFinalChunkAwaitTime().writeData(out);
   }
 
   @Override
@@ -84,6 +92,13 @@ public class DFSSCommand implements DataSerializable {
     recordMap = in.readUTF();
     chunkMap = in.readUTF();
     sessionId = in.readUTF();
+    config = new DFSSTaskConfig();
+    Time time = new Time();
+    time.readData(in);
+    config.setEofSyncAckAwaitTime(time);
+    time = new Time();
+    time.readData(in);
+    config.setFinalChunkAwaitTime(time);
   }
 
   public String getChunkMap() {
@@ -96,6 +111,14 @@ public class DFSSCommand implements DataSerializable {
 
   public String getSessionId() {
     return sessionId;
+  }
+
+  public DFSSTaskConfig getConfig() {
+    return config;
+  }
+
+  public void setConfig(DFSSTaskConfig config) {
+    this.config = config;
   }
 
 }

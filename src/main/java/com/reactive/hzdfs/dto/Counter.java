@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.core;
+package com.reactive.hzdfs.dto;
 
 public class Counter
 {

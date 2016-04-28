@@ -56,6 +56,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.listener.MapListener;
 import com.reactive.hzdfs.cluster.intf.AbstractMessageChannel;
 import com.reactive.hzdfs.cluster.intf.LocalMapEntryPutListener;
@@ -526,6 +527,9 @@ public final class HazelcastClusterServiceBean {
   }
   public ISet<?> getSet(String set) {
     return hzInstance.getSet(set);
+  }
+  public Member thisMember() {
+    return hzInstance.me();
   }
   
 }

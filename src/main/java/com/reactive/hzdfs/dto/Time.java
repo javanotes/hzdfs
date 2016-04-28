@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: IDistributedFileSupport.java
+* FILE: Time.java
 *
 The MIT License (MIT)
 
@@ -26,30 +26,51 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs;
+package com.reactive.hzdfs.dto;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import com.hazelcast.core.IMap;
-import com.reactive.hzdfs.dto.DFSSResponse;
-import com.reactive.hzdfs.dto.DFSSTaskConfig;
-/**
- * A facade for performing distributed (text) file operations over a Hazelcast
- * cluster. By a distributed file system, we model a {@linkplain IMap distributed map} of file records.
- * Each record is a simply a UTF8 text of each line of the file. The data distribution is, however, optimized 
- * by memory mapped reading of byte chunks instead of a plain {@linkplain BufferedReader#readLine()} type iteration.
- */
-public interface IDistributedFileSupport {
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
+public class Time implements DataSerializable{
+
+  @Override
+  public String toString() {
+    return duration + " " + unit;
+  }
+  public long getDuration() {
+    return duration;
+  }
+  public TimeUnit getUnit() {
+    return unit;
+  }
+  private long duration;
+  private TimeUnit unit = TimeUnit.MILLISECONDS;
   /**
-   * Distribute a local file on to Hazelcast cluster.
-   * @param sourceFile
-   * @param config
-   * @return
-   * @throws IOException IOException if the cluster could not be prepared, or file is invalid
+   * 
+   * @param duration
+   * @param unit
    */
-  Future<DFSSResponse> distribute(File sourceFile, DFSSTaskConfig config) throws IOException;
-
+  public Time(long duration, TimeUnit unit) {
+    super();
+    this.duration = duration;
+    this.unit = unit;
+  }
+  Time() {
+    
+  }
+  @Override
+  public void writeData(ObjectDataOutput out) throws IOException {
+    out.writeLong(duration);
+    out.writeUTF(unit.name());
+  }
+  @Override
+  public void readData(ObjectDataInput in) throws IOException {
+    duration = in.readLong();
+    unit = TimeUnit.valueOf(in.readUTF());
+  }
+  
 }

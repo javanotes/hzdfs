@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AsciiFileDistributor.java
+* FILE: FileChunkCollector.java
 *
 The MIT License (MIT)
 
@@ -44,20 +44,22 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.DFSSException;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.cluster.IMapConfig;
 import com.reactive.hzdfs.cluster.intf.AbstractLocalMapEntryPutListener;
 import com.reactive.hzdfs.cluster.intf.MessageChannel;
+import com.reactive.hzdfs.dto.DFSSTaskConfig;
 /**
  * Infrastructure class for a simple distributed file system over Hazelcast. This class is responsible for
  * collating file chunks received on each node and aligning them as text records.
  */
-class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChunk> implements Closeable, MessageChannel<String>
+class FileChunkCollector extends AbstractLocalMapEntryPutListener<AsciiFileChunk> implements Closeable, MessageChannel<String>
 {
 
-  private static final Logger log = LoggerFactory.getLogger(AsciiFileDistributor.class);
+  private static final Logger log = LoggerFactory.getLogger(FileChunkCollector.class);
   private static final IMapConfig dfsConfig = DFSMapConfig.class.getAnnotation(IMapConfig.class);
   
   private String targetMap, distributionMap;
@@ -70,6 +72,7 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
         + sessionId + ", closed=" + closed + "]";
   }
 
+  private final DFSSTaskConfig config;
 
   /**
    * New distributor instance that would be instantiated on each node.
@@ -77,7 +80,7 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
    * @param recordMap IMap where the distributed records would be stored as text
    * @param distributionMap IMap where the file chunks are being distributed
    */
-  public AsciiFileDistributor(HazelcastClusterServiceBean hzService, String recordMap, String distributionMap, String sessionId) {
+  public FileChunkCollector(HazelcastClusterServiceBean hzService, String recordMap, String distributionMap, String sessionId, DFSSTaskConfig cfg) {
     super(hzService, false);
     
     this.targetMap = recordMap;
@@ -86,6 +89,7 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     listenerId = this.hzService.addLocalEntryListener(this);
     topicRegId = this.hzService.addMessageChannel(this);
     this.sessionId = sessionId;
+    config = cfg;
     log.debug("[DFSS#"+sessionId+"] "+toString());
     
   }
@@ -120,7 +124,7 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
   {
     hzService.getAtomicLong(keyspace()).addAndGet(len);
   }
-  private void handleNextChunk(Serializable key, AsciiFileChunk chunk)
+  private void handleNextChunk(Serializable key, AsciiFileChunk chunk) 
   {
     String fileKey = makeFileKey(chunk);
     incrementByteCounter(chunk.getChunk().length);
@@ -169,11 +173,17 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     isawaitAckFromMembers = true;
     ICountDownLatch latch = hzService.getClusterLatch(topic());
     sendMessage(END_OF_DATA);
+    boolean awaitSuccess = false;
     try 
     {
-      boolean b = latch.await(60, TimeUnit.SECONDS);
-      if(!b)
-        throw new DFSSException("["+sessionId+"] Unable to acquire EOF ack from members in 60 secs. Check node which could not emit final record.");
+      awaitSuccess = latch.await(config.getEofSyncAckAwaitTime().getDuration(), config.getEofSyncAckAwaitTime().getUnit());
+      if(!awaitSuccess)
+      {
+        DFSSException dfe = new DFSSException("["+sessionId+"] Unable to acquire EOF ack from members in "+config.getEofSyncAckAwaitTime());
+        dfe.setErrorCode(DFSSException.ERR_IO_TIMEOUT);
+        log.error("", dfe);
+        addErrNode(hzService.thisMember(), DFSSException.ERR_IO_TIMEOUT);
+      }
     } 
     catch (InterruptedException e1) 
     {
@@ -183,22 +193,22 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     {
       isawaitAckFromMembers = false;
       latch.destroy();
-      cleanSlate();
+      cleanSlate(awaitSuccess);
     }
     log.info("[DFSS#"+sessionId+"] Synch completed successfully. Marking as end of job.");
   }
   
-  private void cleanSlate()
+  private void cleanSlate(boolean awaitSuccess)
   {
     close();
     destroyTempDO();
-    unlock();
-    log.info("[DFSS#"+sessionId+"] Clean slate done..");
+    unlock(awaitSuccess);
+    log.info("[DFSS#"+sessionId+"] Released intermediary resources..");
   }
   /**
    * Signal to the coordinator that all chunk readers have synched.
    */
-  private void unlock() {
+  private void unlock(boolean awaitSuccess) {
     ILock lock = getClusterLock();
     lock.lock();
     try
@@ -278,8 +288,9 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
     log.info("[DFSS#"+sessionId+"] EOF synch signal was received. Should expect no more chunks. Waiting for 30 secs.");
     try 
     {
-      if (recordEmitted.compareAndSet(false, false)) {
-        waitForLastEmittedRecord(30, TimeUnit.SECONDS);
+      if (recordEmitted.compareAndSet(false, false)) 
+      {
+        waitForLastEmittedRecord();
       }
       if(!recordEmitted.get() || isAppendableRecordExist())
       {
@@ -301,10 +312,10 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
         onEOFSignalled();
       }
       //these will be executed on the node that received the EOF chunk.
-      else if(isawaitAckFromMembers && ERR_INCOMPLETE_REC.equals(message.getMessageObject()))
+      else if(isawaitAckFromMembers && DFSSException.ERR_INCOMPLETE_REC.equals(message.getMessageObject()))
       {
         log.error("[DFSS#"+sessionId+"] ERR_INCOMPLETE_REC synch ack was received from "+message.getPublishingMember());
-        errOnSynch().add(message.getPublishingMember().toString());
+        addErrNode(message.getPublishingMember(), DFSSException.ERR_INCOMPLETE_REC);
         countdownEOFLatch();
       }
       else if(isawaitAckFromMembers && END_OF_DATA_ACK.equals(message.getMessageObject()))
@@ -314,6 +325,10 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
       }
     }
     
+  }
+  private void addErrNode(Member m, String msg)
+  {
+    errOnSynch().add(m.toString()+";"+msg);
   }
   @SuppressWarnings("unchecked")
   public ISet<String> errOnSynch()
@@ -333,19 +348,19 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
   private void signalEOFErrAck()
   {
     log.error("["+sessionId+"] Final record did not emit on this node after EOF was received!");
-    sendMessage(ERR_INCOMPLETE_REC);
+    sendMessage(DFSSException.ERR_INCOMPLETE_REC);
   }
   private volatile boolean iswaitForLastEmittedRecord;
   
   /**
    * 
    */
-  private synchronized void waitForLastEmittedRecord(long time, TimeUnit unit) 
+  private synchronized void waitForLastEmittedRecord() 
   {
     iswaitForLastEmittedRecord = true;
     try 
     {
-      wait(unit.toMillis(time));
+      wait(config.getFinalChunkAwaitTime().getUnit().toMillis(config.getFinalChunkAwaitTime().getDuration()));
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       log.debug("", e);
@@ -374,6 +389,6 @@ class AsciiFileDistributor extends AbstractLocalMapEntryPutListener<AsciiFileChu
 
   static final String END_OF_DATA = "END_OF_DATA";
   static final String END_OF_DATA_ACK = "END_OF_DATA_ACK";
-  static final String ERR_INCOMPLETE_REC = "ERR_INCOMPLETE_REC";
+  
     
 }

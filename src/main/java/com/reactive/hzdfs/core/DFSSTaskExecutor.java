@@ -30,6 +30,7 @@ package com.reactive.hzdfs.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
 import com.reactive.hzdfs.DFSSException;
+import com.reactive.hzdfs.dto.Counter;
+import com.reactive.hzdfs.dto.DFSSResponse;
 /**
  * The executor for a single file distribution process.
  */
@@ -51,7 +54,7 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
   private final DistributedFileSupportService dfss;
   private String chunkMap;
   String sessionId;
-  private final AsciiFileDistributor fileDist;
+  private final FileChunkCollector chunkCollector;
   String recordMap;
   private long consumableBytesLen = 0;
   /**
@@ -61,12 +64,12 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
    * @param sourceFile
    * @param fileDist
    */
-  DFSSTaskExecutor(DistributedFileSupportService distributedFileSupportService, String chunkMap, File sourceFile, AsciiFileDistributor fileDist) {
+  DFSSTaskExecutor(DistributedFileSupportService distributedFileSupportService, String chunkMap, File sourceFile, FileChunkCollector fileDist) {
     super();
     this.dfss = distributedFileSupportService;
     this.chunkMap = chunkMap;
     this.sourceFile = sourceFile;
-    this.fileDist = fileDist;
+    this.chunkCollector = fileDist;
   }
   private Counter putChunk(AsciiFileChunk chunk)
   {
@@ -86,9 +89,9 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
   }
   private final File sourceFile;
   
-  private void submitChunks() throws IOException 
+  private void submitChunks() throws IOException, DFSSException 
   {
-    try(AsciiChunkReader reader = new AsciiChunkReader(sourceFile, 8192))
+    try(FileChunkReader reader = new FileChunkReader(sourceFile, 8192))
     {
       log.info("[DFSS#"+sessionId+"] Start file chunk distribution..");
       AsciiFileChunk chunk = null;
@@ -99,7 +102,7 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
         chunk = reader.readNext();
       } catch (IOException e) {
         DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
-        dfse.setErrorCode(DFSSException.ERR_IO_RW_EXCEPTION);
+        dfse.setErrorCode(DFSSException.ERR_IO_OPERATION);
         throw dfse;
       }
       
@@ -116,7 +119,7 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
             }
           } catch (IOException e) {
             DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
-            dfse.setErrorCode(DFSSException.ERR_IO_RW_EXCEPTION);
+            dfse.setErrorCode(DFSSException.ERR_IO_OPERATION);
             throw dfse;
           }
           
@@ -142,6 +145,15 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
     
     return chunk;
   }
+  private static boolean hasTimeOut(Set<String> errNodes)
+  {
+    for(String s : errNodes)
+    {
+      if(s.contains(DFSSException.ERR_IO_TIMEOUT))
+        return true;
+    }
+    return false;
+  }
   private DFSSResponse prepareResponse() throws DFSSException
   {
     try 
@@ -150,17 +162,23 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
       if(size != consumableBytesLen)
         throw new DFSSException("["+sessionId+"] Distributed file size mismatch! Bytes expected=> "+consumableBytesLen+" Bytes distributed=> "+size);
       
-      ISet<String> errNodes = fileDist.errOnSynch();
-      DFSSResponse success = errNodes.isEmpty() ? DFSSResponse.SUCCESS : DFSSResponse.ERROR;
-      success.setSessionId(sessionId);
-      success.setRecordMap(recordMap);
-      success.setNoOfRecords(this.dfss.hzService.getMap(recordMap).size());
-      success.setSourceByteSize(sourceFile.length());
-      success.setSinkByteSize(size);
-      success.getErrorNodes().addAll(errNodes);
+      ISet<String> errNodes = chunkCollector.errOnSynch();
+      errNodes.toArray();
+      
+      DFSSResponse response = errNodes.isEmpty() ? DFSSResponse.COMPLETE : hasTimeOut(errNodes) ? DFSSResponse.TIMEOUT : DFSSResponse.ERROR;
+      response.setSessionId(sessionId);
+      response.setRecordMap(recordMap);
+      response.setNoOfRecords(this.dfss.hzService.getMap(recordMap).size());
+      response.setSourceByteSize(sourceFile.length());
+      response.setSinkByteSize(size);
+      response.getErrorNodes().addAll(errNodes);
+      
       errNodes.destroy();
-      return success;
-    } finally {
+      
+      return response;
+    } 
+    finally 
+    {
       this.dfss.hzService.getAtomicLong(chunkMap).destroy();
     }
   }
@@ -170,20 +188,21 @@ class DFSSTaskExecutor implements Callable<DFSSResponse>
     try 
     {
       submitChunks();
-    } catch (IOException e) {
+    } 
+    catch (IOException e) {
       DFSSException dfse = new DFSSException("["+sessionId+"] "+e.getMessage(), e);
-      dfse.setErrorCode(DFSSException.ERR_IO_EXCEPTION);
+      dfse.setErrorCode(DFSSException.ERR_IO_FILE);
       throw dfse;
     }
     try 
     {
-      fileDist.awaitCompletion(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+      chunkCollector.awaitCompletion(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-    boolean b = this.dfss.hzService.isDistributedObjectDestroyed(fileDist.keyspace(), IMap.class);
+    boolean b = this.dfss.hzService.isDistributedObjectDestroyed(chunkCollector.keyspace(), IMap.class);
     if(!b)
-      log.warn("[DFSS#"+sessionId+"] >>> Temporary map ["+fileDist.keyspace()+"] not destroyed <<<");
+      log.warn("[DFSS#"+sessionId+"] >>> Temporary map ["+chunkCollector.keyspace()+"] not destroyed <<<");
     
     return prepareResponse();
   }

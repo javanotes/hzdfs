@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AsciiChunkReader.java
+* FILE: FileChunkReader.java
 *
 The MIT License (MIT)
 
@@ -44,9 +44,9 @@ import com.reactive.hzdfs.io.fs.MemoryMappedChunkHandler;
 /**
  * 
  */
-public class AsciiChunkReader extends MemoryMappedChunkHandler {
+class FileChunkReader extends MemoryMappedChunkHandler {
 
-  private static final Logger log = LoggerFactory.getLogger(AsciiChunkReader.class);
+  private static final Logger log = LoggerFactory.getLogger(FileChunkReader.class);
   
   private final LinkedList<AsciiFileChunk> splitChunks = new LinkedList<>();
   private AsciiFileChunk lastChunk = null;
@@ -124,7 +124,7 @@ public class AsciiChunkReader extends MemoryMappedChunkHandler {
    * @param chunkSize
    * @throws IOException
    */
-  public AsciiChunkReader(File f, int chunkSize) throws IOException {
+  public FileChunkReader(File f, int chunkSize) throws IOException {
     super(f, chunkSize);
     checkFileType(f);
   }
