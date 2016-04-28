@@ -42,7 +42,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceFactoryBean;
 import com.reactive.hzdfs.cluster.HazelcastProperties;
-import com.reactive.hzdfs.cluster.intf.MigratedEntryProcessor;
+import com.reactive.hzdfs.cluster.MigratedEntryProcessor;
 import com.reactive.hzdfs.utils.EntityFinder;
 /**
  * Primary configuration class to autowire the core platform class instances and Hazelcast.

@@ -38,9 +38,6 @@ import java.nio.file.attribute.FileTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.reactive.hzdfs.io.fs.BufferedStreamChunkHandler;
-import com.reactive.hzdfs.io.fs.MemoryMappedChunkHandler;
 /**
  * The base class for creating chunk handlers. This class provides common functions
  * on the byte sequence, like initializing file attributes and performing necessary checks. Subclasses

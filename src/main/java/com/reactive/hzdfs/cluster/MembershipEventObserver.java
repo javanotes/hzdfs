@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.cluster.intf;
+package com.reactive.hzdfs.cluster;
 
 import java.util.Observer;
 

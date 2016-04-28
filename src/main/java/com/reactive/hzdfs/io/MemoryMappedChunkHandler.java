@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.io.fs;
+package com.reactive.hzdfs.io;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,9 +39,6 @@ import java.nio.file.StandardOpenOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
-
-import com.reactive.hzdfs.io.AbstractFileChunkHandler;
-import com.reactive.hzdfs.io.FileChunk;
 /**
  * Reads and writes using mapped byte buffer
  */

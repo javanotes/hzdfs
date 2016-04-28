@@ -137,6 +137,28 @@ public class TestRunner {
     return;
   }
   
+  //@Test
+  public void testDistributeLargeFile()
+  {
+    
+    File f = new File("C:\\Users\\esutdal\\Documents\\test\\cbp14co.txt");
+    try 
+    {
+      Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
+      DFSSResponse dfs = fut.get();
+      Assert.assertEquals("Record size do not match", 2125362, dfs.getNoOfRecords());
+      Assert.assertTrue("error list not empty", dfs.getErrorNodes().isEmpty());
+      return;
+    } catch (IOException e) {
+      Assert.fail("Job did not start - "+e);
+    } catch (InterruptedException e) {
+      Assert.fail("InterruptedException - "+e);
+    } catch (ExecutionException e) {
+      Assert.fail("File distribution error - "+e.getCause());
+    }
+    return;
+  }
+  
   @Test
   public void testDistributedSimpleFileRecords()
   {

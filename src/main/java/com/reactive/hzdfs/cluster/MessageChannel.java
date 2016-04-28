@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: AbstractMigratedEntryProcessor.java
+* FILE: MessageChannel.java
 *
 The MIT License (MIT)
 
@@ -26,44 +26,24 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.cluster.intf;
+package com.reactive.hzdfs.cluster;
 
-import java.io.Serializable;
-import java.util.Map.Entry;
-
-import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.core.MessageListener;
 /**
- * An {@linkplain EntryProcessor} that would be invoked on all entries migrated due to a partition migration.
+ * A publish-subscribe dual mode channel on Hazelcast.
  *
- * @param <V>
+ * @param <E>
  */
-public abstract class AbstractMigratedEntryProcessor<V> implements MigratedEntryProcessor<V> {
-
+public interface MessageChannel<E> extends MessageListener<E> {
   /**
    * 
+   * @return Topic name
    */
-  private static final long serialVersionUID = 1L;
+  String topic();
   /**
-   * Handle the migrated entry value, and return a transformed value as necessary.
-   * @param key
-   * @param value
-   * @return the handled value
+   * Publish the message to the {@link #topic()}.
+   * @param message
    */
-  protected abstract V handleEntry(Serializable key, V value);
-  @Override
-  public Object process(Entry<Serializable, V> entry) {
-    V value = handleEntry(entry.getKey(), entry.getValue());
-    entry.setValue(value);
-    return null;
-  }
-  /**
-   * Override if required.
-   */
-  @Override
-  public EntryBackupProcessor<Serializable, V> getBackupProcessor()
-  {
-    return null;
-  }
+  void sendMessage(E message);
   
 }

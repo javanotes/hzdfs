@@ -26,11 +26,9 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.cluster.intf;
+package com.reactive.hzdfs.cluster;
 
 import java.io.Serializable;
-
-import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 
 public abstract class AbstractLocalMapEntryPutListener<V>
     implements LocalMapEntryPutListener<V> {

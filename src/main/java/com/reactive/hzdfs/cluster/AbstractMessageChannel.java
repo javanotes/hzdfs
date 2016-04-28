@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: LocalMapEntryPutListener.java
+* FILE: AbstractMessageChannel.java
 *
 The MIT License (MIT)
 
@@ -23,26 +23,55 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.cluster.intf;
+package com.reactive.hzdfs.cluster;
 
-import java.io.Serializable;
+import java.io.Closeable;
 
-import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.map.listener.EntryUpdatedListener;
+import org.springframework.util.Assert;
 /**
- * Local map entry listener on entry addition and updation
- * @param <V>
+ * A base class with utility.
+ *
+ * @param <E>
  */
-public interface LocalMapEntryPutListener<V> extends EntryAddedListener<Serializable, V>, EntryUpdatedListener<Serializable, V>{
+public abstract class AbstractMessageChannel<E> implements MessageChannel<E>, Closeable {
 
   /**
-   * Get the IMap for which migrated elements will have a callback
+   * Get the Hazelcast service bean
    * @return
    */
-  String keyspace();
+  protected HazelcastClusterServiceBean hazelcastService;
+  protected String registrationId;
+  public String getRegistrationId() {
+    return registrationId;
+  }
+
+  /**
+   * 
+   * @param hazelcastService
+   */
+  public AbstractMessageChannel(HazelcastClusterServiceBean hazelcastService, boolean orderedSubcribe) {
+    Assert.notNull(hazelcastService);
+    this.hazelcastService = hazelcastService;
+    this.hazelcastService.addMessageChannel(this, orderedSubcribe);
+  }
+    
+  @Override
+  public void sendMessage(E message) {
+    hazelcastService.publish(message, topic());
+
+  }
   
+  public void setRegistrationId(String regID) {
+    registrationId = regID;
+    
+  }
+
+  @Override
+  public void close() {
+    hazelcastService.removeMessageChannel(this);
+  }
+
 }

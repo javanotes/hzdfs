@@ -40,7 +40,6 @@ import java.util.Map.Entry;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
-import com.reactive.hzdfs.cluster.intf.MigratedEntryProcessor;
 
 class DefaultMigrationListener implements MigrationListener {
   private static final Logger log = LoggerFactory.getLogger(DefaultMigrationListener.class);

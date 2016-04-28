@@ -54,7 +54,7 @@ import com.hazelcast.core.Message;
 import com.reactive.hzdfs.IDistributedFileSupport;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.cluster.IMapConfig;
-import com.reactive.hzdfs.cluster.intf.MessageChannel;
+import com.reactive.hzdfs.cluster.MessageChannel;
 import com.reactive.hzdfs.dto.DFSSCommand;
 import com.reactive.hzdfs.dto.DFSSResponse;
 import com.reactive.hzdfs.dto.DFSSTaskConfig;

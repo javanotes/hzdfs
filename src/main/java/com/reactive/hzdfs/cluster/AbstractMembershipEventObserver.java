@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: FileChunkSender.java
+* FILE: AbstractMembershipEventObserver.java
 *
 The MIT License (MIT)
 
@@ -26,32 +26,39 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.io;
+package com.reactive.hzdfs.cluster;
 
-import com.hazelcast.core.Message;
-import com.reactive.hzdfs.Configurator;
-import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.cluster.intf.AbstractMessageChannel;
-/**
- * A class to publish {@linkplain FileChunk}.
- */
-public class FileChunkSender extends AbstractMessageChannel<FileChunk> {
-  /**
-   * 
-   * @param hzService
-   */
-  public FileChunkSender(HazelcastClusterServiceBean hzService) {
-    super(hzService, true);
-  }
-  @Override
-  public String topic() {
-    return Configurator.PIPED_TOPIC_FILE;
-  }
+import java.util.Observable;
+
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+
+public abstract class AbstractMembershipEventObserver
+    implements MembershipEventObserver {
 
   @Override
-  public void onMessage(Message<FileChunk> message) {
-    // ignored
+  public final void update(Observable arg0, Object arg1) {
+    
+    if(arg1 instanceof MembershipEvent)
+    {
+      
+      MembershipEvent me = (MembershipEvent) arg1;
+      switch(me.getEventType())
+      {
+        case MembershipEvent.MEMBER_ADDED:
+          handleMemberAdded(me.getMember());
+          break;
+        case MembershipEvent.MEMBER_REMOVED:
+          handleMemberRemoved(me.getMember());
+          break;
+        case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
+          MemberAttributeEvent ma = (MemberAttributeEvent) arg1;
+          handleMemberModified(ma.getMember(), ma.getOperationType());
+          break;
+          default: break;
+      }
+    }
     
   }
-  
+
 }

@@ -40,7 +40,7 @@ import java.util.LinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.reactive.hzdfs.io.fs.MemoryMappedChunkHandler;
+import com.reactive.hzdfs.io.MemoryMappedChunkHandler;
 /**
  * 
  */

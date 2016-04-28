@@ -1,6 +1,6 @@
 /* ============================================================================
 *
-* FILE: FileSharingAgent.java
+* FILE: MigratedEntryProcessor.java
 *
 The MIT License (MIT)
 
@@ -26,27 +26,23 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.io;
+package com.reactive.hzdfs.cluster;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.Future;
+import java.io.Serializable;
 
-import com.reactive.hzdfs.OperationsException;
+import com.hazelcast.map.EntryProcessor;
 /**
- * A worker for file sharing. Ideally a single worker would be needed per node.
- * @see AbstractFileSharingAgent
+ * Partition migration callback on all entries of a given map.
+ *
+ * @param <V>
+ * @see AbstractMigratedEntryProcessor
  */
-public interface FileSharingAgent {
+public interface MigratedEntryProcessor<V> extends EntryProcessor<Serializable, V>{
 
   /**
-   * Shares a file across the cluster. File sharing is an exclusive process.
-   * So at a time only 1 sharing can be processed.
-   * @param f
-   * @return a Future for the file share response.
-   * @throws IOException
-   * @throws OperationsException recoverable exception, can be tried later probably
+   * Gets the Map for which migrated elements will have a callback
+   * @return
    */
-  Future<FileShareResponse> distribute(File f) throws IOException, OperationsException;
-
+  String keyspace();
+  
 }

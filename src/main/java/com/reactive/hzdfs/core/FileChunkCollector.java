@@ -47,10 +47,10 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.reactive.hzdfs.DFSSException;
+import com.reactive.hzdfs.cluster.AbstractLocalMapEntryPutListener;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.cluster.IMapConfig;
-import com.reactive.hzdfs.cluster.intf.AbstractLocalMapEntryPutListener;
-import com.reactive.hzdfs.cluster.intf.MessageChannel;
+import com.reactive.hzdfs.cluster.MessageChannel;
 import com.reactive.hzdfs.dto.DFSSTaskConfig;
 /**
  * Infrastructure class for a simple distributed file system over Hazelcast. This class is responsible for

@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.io.fs;
+package com.reactive.hzdfs.io;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -39,9 +39,6 @@ import java.io.OutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.reactive.hzdfs.io.AbstractFileChunkHandler;
-import com.reactive.hzdfs.io.FileChunk;
 /**
  * Reads and writes using buffered stream
  */
