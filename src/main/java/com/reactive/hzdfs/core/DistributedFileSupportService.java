@@ -87,12 +87,12 @@ public class DistributedFileSupportService implements MessageChannel<DFSSCommand
       int n=0;
       @Override
       public Thread newThread(Runnable r) {
-        Thread t = new Thread(r, "DFSS.Worker-"+(n++));
+        Thread t = new Thread(r, "DFSS-Worker-"+(n++));
         return t;
       }
     });
     recordMapCfg = RecordMapConfig.class.getAnnotation(IMapConfig.class);
-    log.info("-- File distribution service initialized --");
+    log.info("[DFSS] File distribution service initialized");
   }
   @PreDestroy
   private void destroy()
