@@ -41,7 +41,8 @@ import org.springframework.data.keyvalue.annotation.KeySpace;
 @Target(value = { TYPE })
 
 /**
- * Quick settings for a Map config. NOTE: This will override any setting made in the hazelcast config xml.
+ * Quick settings for a IMap configuration. 
+ * NOTE: This will override any setting made in the hazelcast config xml.
  */
 public @interface IMapConfig {
 

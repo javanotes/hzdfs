@@ -26,7 +26,7 @@ SOFTWARE.
 *
 * ============================================================================
 */
-package com.reactive.hzdfs.cluster;
+package com.reactive.hzdfs;
 
 import java.util.HashMap;
 import java.util.Map;

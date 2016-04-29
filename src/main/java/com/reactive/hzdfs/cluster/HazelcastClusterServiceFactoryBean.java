@@ -38,6 +38,8 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
+import com.reactive.hzdfs.HazelcastProperties;
+
 public class HazelcastClusterServiceFactoryBean
     implements FactoryBean<HazelcastClusterServiceBean> {
 

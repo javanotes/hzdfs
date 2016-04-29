@@ -58,6 +58,7 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.listener.MapListener;
+import com.hazelcast.mapreduce.JobTracker;
 import com.reactive.hzdfs.utils.ResourceLoaderHelper;
 
 /**
@@ -525,6 +526,10 @@ public final class HazelcastClusterServiceBean {
   }
   public Member thisMember() {
     return hzInstance.me();
+  }
+  public JobTracker newJobTracker(String string) {
+    return hzInstance.getHazelcast().getJobTracker(string);
+    
   }
   
 }

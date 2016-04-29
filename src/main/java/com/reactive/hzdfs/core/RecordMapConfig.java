@@ -32,8 +32,7 @@ import com.reactive.hzdfs.cluster.IMapConfig;
 
 @IMapConfig(name = "RECORDMAP", 
 statisticsOn = false, 
-backupCount = 1, 
-asyncBackupCount = 1)
+backupCount = 1)
 interface RecordMapConfig {
 
 }

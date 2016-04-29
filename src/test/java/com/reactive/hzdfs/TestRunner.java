@@ -30,9 +30,13 @@ package com.reactive.hzdfs;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,6 +44,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.mapreduce.JobTracker;
 import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
 import com.reactive.hzdfs.dto.DFSSResponse;
 import com.reactive.hzdfs.dto.DFSSTaskConfig;
@@ -127,9 +133,9 @@ public class TestRunner {
     {
       File f = ResourceLoaderHelper.loadFromFileOrClassPath("vp-client.log");
       Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
-      DFSSResponse dfs = fut.get();
-      Assert.assertEquals("Records do not match", 48, dfs.getNoOfRecords());
-      Assert.assertTrue("error list not empty", dfs.getErrorNodes().isEmpty());
+      resp = fut.get();
+      Assert.assertEquals("Records do not match", 48, resp.getNoOfRecords());
+      Assert.assertTrue("error list not empty", resp.getErrorNodes().isEmpty());
       return;
     } catch (IOException e) {
       Assert.fail("Job did not start - "+e);
@@ -162,11 +168,47 @@ public class TestRunner {
     }
     return;
   }
-  
+  DFSSResponse resp = null;
+  @After
+  public void clean()
+  {
+    if(resp != null && resp.getRecordMap() != null)
+    {
+      ((DistributedObject) hzService.getMap(resp.getRecordMap())).destroy();
+    }
+  }
   @Test
   public void testDistributedSimpleFileRecords()
   {
-    DFSSResponse resp = null;
+    try 
+    {
+      File f = ResourceLoaderHelper.loadFromFileOrClassPath("AirPassengers.csv");
+      Future<DFSSResponse> fut = dfss.distribute(f, new DFSSTaskConfig());
+      resp = fut.get();
+      Assert.assertNotNull(resp);
+      Assert.assertEquals("Records do not match", 145, resp.getNoOfRecords());
+      Assert.assertTrue("error list not empty", resp.getErrorNodes().isEmpty());
+      
+    } catch (IOException e) {
+      Assert.fail("Job did not start - "+e);
+    } catch (InterruptedException e) {
+      Assert.fail("InterruptedException - "+e);
+    } catch (ExecutionException e) {
+      Assert.fail("File distribution error - "+e.getCause());
+    }
+    
+    
+    Assert.assertNotNull(resp.getRecordMap());
+    Object record = hzService.get(48, resp.getRecordMap());
+    Assert.assertEquals("\"47\",1952.83333333333,172", record);
+    record = hzService.get(1, resp.getRecordMap());
+    Assert.assertEquals("\"\",\"time\",\"AirPassengers\"", record);
+    record = hzService.get(145, resp.getRecordMap());
+    Assert.assertEquals("\"144\",1960.91666666667,432", record);
+  }
+  @Test
+  public void testMapReduceSimpleFileRecords()
+  {
     
     try 
     {
@@ -193,5 +235,24 @@ public class TestRunner {
     Assert.assertEquals("\"\",\"time\",\"AirPassengers\"", record);
     record = hzService.get(145, resp.getRecordMap());
     Assert.assertEquals("\"144\",1960.91666666667,432", record);
+    
+    JobTracker tracker = hzService.newJobTracker("default");
+    JobRunner runner = new JobRunner(resp, tracker);
+    runner.run();
+    
+    try 
+    {
+      Map<String, Integer> result = runner.future.get(60, TimeUnit.SECONDS);
+      Assert.assertTrue(!result.isEmpty());
+      Assert.assertTrue(result.containsKey("461"));
+      Assert.assertEquals(2, (int)result.get("461"));
+    } catch (InterruptedException e) {
+      Assert.fail("InterruptedException");
+    } catch (ExecutionException e) {
+      Assert.fail("ExecutionException - "+e.getCause());
+    } catch (TimeoutException e) {
+      Assert.fail("TimeoutException");
+    }
+    
   }
 }
