@@ -41,7 +41,7 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
-import com.reactive.hzdfs.dto.DFSSResponse;
+import com.reactivetechnologies.hzdfs.dto.DFSSResponse;
 
 class JobRunner implements Serializable,Runnable
 {

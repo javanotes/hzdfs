@@ -41,24 +41,27 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.mapreduce.JobTracker;
-import com.reactive.hzdfs.cluster.HazelcastClusterServiceBean;
-import com.reactive.hzdfs.dto.DFSSResponse;
-import com.reactive.hzdfs.dto.DFSSTaskConfig;
-import com.reactive.hzdfs.utils.ResourceLoaderHelper;
+import com.reactivetechnologies.hzdfs.DFSSException;
+import com.reactivetechnologies.hzdfs.IDistributedFileSupport;
+import com.reactivetechnologies.hzdfs.Server;
+import com.reactivetechnologies.hzdfs.cluster.HazelcastOperations;
+import com.reactivetechnologies.hzdfs.dto.DFSSResponse;
+import com.reactivetechnologies.hzdfs.dto.DFSSTaskConfig;
+import com.reactivetechnologies.hzdfs.utils.ResourceLoaderHelper;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Server.class)
+@SpringBootTest(classes = Server.class)
 public class TestRunner {
 
   @Autowired
   private IDistributedFileSupport dfss;
   @Autowired
-  private HazelcastClusterServiceBean hzService;
+  private HazelcastOperations hzService;
   public TestRunner() {
     // TODO Auto-generated constructor stub
   }
